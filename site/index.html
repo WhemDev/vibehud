@@ -135,7 +135,7 @@
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
     gap: 48px; align-items: center;
   }
-  @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 920px) { .hero-grid { grid-template-columns: minmax(0, 1fr); } }
 
   .kicker {
     display: inline-block; background: var(--ink); color: var(--yellow);
@@ -353,8 +353,8 @@
     100% { opacity: 1; transform: none; }
   }
 
-  .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  @media (max-width: 920px) { .cards3 { grid-template-columns: 1fr; } }
+  .cards3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+  @media (max-width: 920px) { .cards3 { grid-template-columns: minmax(0, 1fr); } }
   .card {
     background: var(--card); border: 2px solid var(--ink); box-shadow: var(--shadow);
     padding: 20px; display: flex; flex-direction: column; gap: 12px;
@@ -391,8 +391,8 @@
   .flip-detail .bad { color: var(--red); }
 
   /* ---------- how ---------- */
-  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  @media (max-width: 920px) { .steps { grid-template-columns: 1fr; } }
+  .steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+  @media (max-width: 920px) { .steps { grid-template-columns: minmax(0, 1fr); } }
   .step { position: relative; }
   .step .card { height: 100%; }
   .stepnum {
@@ -411,9 +411,9 @@
   .whisper b { color: var(--ink); }
 
   /* ---------- features ---------- */
-  .feat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-  @media (max-width: 920px) { .feat-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .feat-grid { grid-template-columns: 1fr; } }
+  .feat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+  @media (max-width: 920px) { .feat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .feat-grid { grid-template-columns: minmax(0, 1fr); } }
   .feat {
     background: var(--card); border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
     padding: 16px; transition: transform .14s, box-shadow .14s; position: relative; overflow: hidden;
@@ -437,6 +437,29 @@
   footer p { font-size: 12px; color: #b8b2a0; margin: 0; max-width: 52ch; }
   footer .mono { font-size: 11px; color: #b8b2a0; margin-left: auto; }
   @media (max-width: 720px) { footer .mono { margin-left: 0; } }
+
+  /* grid/flex children must not inflate their tracks past the viewport */
+  .promptcard, .card, .step, .feat, .hud, .copyline pre.code { min-width: 0; }
+
+  /* ---------- small screens ---------- */
+  @media (max-width: 560px) {
+    .wrap { padding: 0 18px; }
+    .nav-in { padding: 12px 16px; gap: 10px; }
+    .hero { padding: 44px 0 24px; }
+    h1 { font-size: clamp(30px, 10vw, 38px); }
+    .hero p.sub { font-size: 15.5px; }
+    .hero-grid { gap: 32px; }
+    .promptcard { box-shadow: 5px 5px 0 var(--yellow), 5px 5px 0 2px var(--ink); }
+    .promptcard pre { font-size: 10px; padding: 12px 12px 8px; }
+    .prompt-head .mini { display: none; }
+    .prompt-badge { right: 0; }
+    .hud-cols { flex-wrap: wrap; }
+    .hud-col { min-width: 86px; }
+    .cols { flex-wrap: wrap; }
+    .col { min-width: 130px; }
+    section { padding: 60px 0 12px; }
+    .marquee { margin-top: 40px; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
