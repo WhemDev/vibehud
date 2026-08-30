@@ -1,23 +1,27 @@
 'use client'
 
-import type { AgentMap, PageNode } from '../schema'
+import type { AgentMap, ApiRoute } from '../schema'
 import { normalizeRoute, type ValidationReport } from '../validate'
+import type { Selection } from './DetailDrawer'
 import { statusColor, theme } from './theme'
 
 const NODE_W = 150
 const NODE_H = 52
+const API_H = 44
 const COL_GAP = 220
 const ROW_GAP = 80
 const PAD = 28
 
 interface Positioned {
-  page: PageNode
+  id: string
   x: number
   y: number
+  w: number
+  h: number
 }
 
 /** BFS layering from the root page ('/' if declared, else the first page). */
-function layout(map: AgentMap): Positioned[] {
+function layoutPages(map: AgentMap): { pos: Map<string, Positioned>; bottom: number } {
   const byId = new Map(map.pages.map((p) => [p.id, p]))
   const children = new Map<string, string[]>()
   for (const r of map.relations) {
@@ -46,27 +50,49 @@ function layout(map: AgentMap): Positioned[] {
   }
 
   const rows = new Map<number, number>()
-  const out: Positioned[] = []
+  const pos = new Map<string, Positioned>()
+  let bottom = PAD
   for (const p of map.pages) {
     const layer = layerOf.get(p.id)!
     const row = rows.get(layer) ?? 0
     rows.set(layer, row + 1)
-    out.push({ page: p, x: PAD + layer * COL_GAP, y: PAD + row * ROW_GAP })
+    const y = PAD + row * ROW_GAP
+    pos.set(p.id, { id: p.id, x: PAD + layer * COL_GAP, y, w: NODE_W, h: NODE_H })
+    bottom = Math.max(bottom, y + NODE_H)
   }
-  return out
+  return { pos, bottom }
 }
 
-export function MapView({ map, report }: { map: AgentMap; report?: ValidationReport }) {
-  const nodes = layout(map)
-  const pos = new Map(nodes.map((n) => [n.page.id, n]))
+export function MapView({
+  map,
+  report,
+  selection,
+  onSelect,
+}: {
+  map: AgentMap
+  report?: ValidationReport
+  selection?: Selection
+  onSelect?: (s: Selection) => void
+}) {
+  const { pos, bottom } = layoutPages(map)
+  const apiY = bottom + 46
+  map.apis.forEach((a, i) => {
+    pos.set(a.id, { id: a.id, x: PAD + i * (NODE_W + 44), y: apiY, w: NODE_W, h: API_H })
+  })
+
   const missing = new Set(report?.missing ?? [])
+  const apiMissing = new Set(report?.apiMissing ?? [])
 
-  const width = Math.max(...nodes.map((n) => n.x + NODE_W), 300) + PAD + 4
-  const height = Math.max(...nodes.map((n) => n.y + NODE_H), 120) + PAD + 4
+  const all = [...pos.values()]
+  const width = Math.max(...all.map((n) => n.x + n.w), 300) + PAD + 4
+  const height = Math.max(...all.map((n) => n.y + n.h), 120) + PAD + 4
 
-  if (map.pages.length === 0) {
-    return <p style={{ fontSize: 14, color: theme.muted }}>No pages declared yet.</p>
+  if (map.pages.length === 0 && map.apis.length === 0) {
+    return <p style={{ fontSize: 14, color: theme.muted }}>Nothing declared yet.</p>
   }
+
+  const isSelected = (id: string) =>
+    selection != null && selection.kind !== 'task' && selection.id === id
 
   return (
     <div
@@ -77,66 +103,126 @@ export function MapView({ map, report }: { map: AgentMap; report?: ValidationRep
         boxShadow: theme.shadow,
       }}
     >
-      <svg width={width} height={height} role="img" aria-label="Page map">
+      <svg width={width} height={height} role="img" aria-label="App map">
         <defs>
           <marker id="hud-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
             <path d="M0 0 L8 4 L0 8 z" fill={theme.line} />
           </marker>
         </defs>
+        {map.apis.length > 0 && (
+          <text
+            x={PAD}
+            y={apiY - 14}
+            fontSize={10}
+            fontWeight={800}
+            letterSpacing="0.1em"
+            fontFamily={theme.fontBody}
+            fill={theme.muted}
+          >
+            API ROUTES
+          </text>
+        )}
         {map.relations.map((r, i) => {
           const a = pos.get(r.from)
           const b = pos.get(r.to)
           if (!a || !b) return null
+          const sameBand = Math.abs(a.y - b.y) < ROW_GAP && a.y < apiY === b.y < apiY
+          const x1 = a.x + a.w
+          const y1 = a.y + a.h / 2
+          const x2 = b.x
+          const y2 = b.y + b.h / 2
+          const vertical = b.y >= apiY !== a.y >= apiY
           return (
             <line
               key={i}
-              x1={a.x + NODE_W}
-              y1={a.y + NODE_H / 2}
-              x2={b.x}
-              y2={b.y + NODE_H / 2}
+              x1={vertical ? a.x + a.w / 2 : x1}
+              y1={vertical ? a.y + a.h : y1}
+              x2={vertical ? b.x + b.w / 2 : x2}
+              y2={vertical ? b.y : y2}
               stroke={theme.line}
               strokeWidth={1.5}
+              strokeOpacity={sameBand || vertical ? 1 : 0.8}
               strokeDasharray={r.type === 'nav' ? undefined : '4 3'}
               markerEnd="url(#hud-arrow)"
             />
           )
         })}
-        {nodes.map(({ page, x, y }) => {
+        {map.pages.map((page) => {
+          const n = pos.get(page.id)!
           const isMissing = missing.has(normalizeRoute(page.path))
+          const sel = isSelected(page.id)
           return (
-            <g key={page.id}>
-              {!isMissing && (
-                <rect x={x + 3} y={y + 3} width={NODE_W} height={NODE_H} fill={theme.line} />
-              )}
+            <g
+              key={page.id}
+              onClick={() => onSelect?.({ kind: 'page', id: page.id })}
+              style={{ cursor: onSelect ? 'pointer' : 'default' }}
+            >
+              {!isMissing && <rect x={n.x + 3} y={n.y + 3} width={n.w} height={n.h} fill={theme.line} />}
               <rect
-                x={x}
-                y={y}
-                width={NODE_W}
-                height={NODE_H}
-                fill={theme.card}
+                x={n.x}
+                y={n.y}
+                width={n.w}
+                height={n.h}
+                fill={sel ? theme.warnBg : theme.card}
                 stroke={isMissing ? theme.danger : theme.line}
-                strokeWidth={theme.bw}
+                strokeWidth={sel ? 3 : theme.bw}
                 strokeDasharray={isMissing ? '5 3' : undefined}
               />
-              <circle cx={x + 14} cy={y + 18} r={4.5} fill={statusColor[page.status]} />
-              <text
-                x={x + 26}
-                y={y + 22}
-                fontSize={13}
-                fontWeight={700}
-                fontFamily={theme.fontBody}
-                fill={theme.ink}
-              >
+              <circle cx={n.x + 14} cy={n.y + 18} r={4.5} fill={statusColor[page.status]} />
+              <text x={n.x + 26} y={n.y + 22} fontSize={13} fontWeight={700} fontFamily={theme.fontBody} fill={theme.ink}>
                 {page.label}
               </text>
               <text
-                x={x + 26}
-                y={y + 40}
+                x={n.x + 26}
+                y={n.y + 40}
                 fontSize={10}
                 fontFamily={theme.fontMono}
                 fill={isMissing ? theme.danger : theme.muted}
               >
                 {isMissing ? `${page.path} · missing` : page.path}
+              </text>
+            </g>
+          )
+        })}
+        {map.apis.map((api: ApiRoute) => {
+          const n = pos.get(api.id)!
+          const isMissing = apiMissing.has(normalizeRoute(api.path))
+          const sel = isSelected(api.id)
+          return (
+            <g
+              key={api.id}
+              onClick={() => onSelect?.({ kind: 'api', id: api.id })}
+              style={{ cursor: onSelect ? 'pointer' : 'default' }}
+            >
+              {!isMissing && <rect x={n.x + 3} y={n.y + 3} width={n.w} height={n.h} fill={theme.line} />}
+              <rect
+                x={n.x}
+                y={n.y}
+                width={n.w}
+                height={n.h}
+                fill={isMissing ? theme.card : theme.tagBg}
+                stroke={isMissing ? theme.danger : sel ? theme.warnBg : theme.line}
+                strokeWidth={sel ? 3 : theme.bw}
+                strokeDasharray={isMissing ? '5 3' : undefined}
+              />
+              <text
+                x={n.x + 12}
+                y={n.y + 18}
+                fontSize={10}
+                fontWeight={700}
+                fontFamily={theme.fontMono}
+                fill={isMissing ? theme.danger : theme.tagInk}
+              >
+                {api.methods.join(' ')}
+              </text>
+              <text
+                x={n.x + 12}
+                y={n.y + 33}
+                fontSize={10}
+                fontFamily={theme.fontMono}
+                fill={isMissing ? theme.danger : theme.card}
+              >
+                {isMissing ? `${api.path} · missing` : api.path}
               </text>
             </g>
           )

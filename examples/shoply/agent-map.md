@@ -1,8 +1,8 @@
 # Shoply — agent map
 
 This example is **deliberately out of sync** with the filesystem to show the
-validation badge: `wishlist` is declared but doesn't exist, while `/account`
-and `/orders` exist but aren't declared.
+validation badge: the `wishlist` page and `wishlist-api` are declared but don't
+exist, while `/account`, `/orders`, and `/api/orders` exist but aren't declared.
 
 ```yaml agent-map
 version: 1
@@ -13,25 +13,76 @@ pages:
     label: Home
     path: /
     status: done
+    elements:
+      - name: HeroBanner
+        kind: component
+      - name: FeaturedProducts
+        kind: list
   - id: products
     label: Products
     path: /products
     status: done
+    elements:
+      - name: ProductGrid
+        kind: list
+        status: done
+      - name: FilterBar
+        kind: component
+        status: doing
+      - name: Pagination
+        kind: component
+        status: todo
   - id: product
     label: Product detail
     path: /products/[id]
     status: done
+    elements:
+      - name: ImageGallery
+        kind: component
+      - name: AddToCartButton
+        kind: component
   - id: cart
     label: Cart
     path: /cart
     status: doing
+    elements:
+      - name: CartTable
+        kind: list
+        status: done
+      - name: QuantityStepper
+        kind: component
+        status: doing
   - id: checkout
     label: Checkout
     path: /checkout
     status: doing
+    note: "Stripe is in test mode until the domain is verified."
+    elements:
+      - name: AddressForm
+        kind: form
+        status: done
+      - name: PaymentForm
+        kind: form
+        status: doing
   - id: wishlist
     label: Wishlist
     path: /wishlist
+    status: todo
+
+apis:
+  - id: products-api
+    label: Products API
+    path: /api/products
+    methods: [GET]
+  - id: checkout-api
+    label: Checkout API
+    path: /api/checkout
+    methods: [POST]
+    note: "Creates the Stripe payment intent."
+  - id: wishlist-api
+    label: Wishlist API
+    path: /api/wishlist
+    methods: [GET, POST]
     status: todo
 
 relations:
@@ -47,6 +98,15 @@ relations:
   - from: checkout
     to: home
     type: auth
+  - from: products
+    to: products-api
+    type: data
+  - from: checkout
+    to: checkout-api
+    type: data
+  - from: wishlist
+    to: wishlist-api
+    type: data
 
 tasks:
   - id: t1

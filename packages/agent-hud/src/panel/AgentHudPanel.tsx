@@ -1,8 +1,9 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import type { AgentMap } from '../schema'
 import type { ValidationReport } from '../validate'
+import { DetailDrawer, type Selection } from './DetailDrawer'
 import { KanbanView } from './KanbanView'
 import { MapView } from './MapView'
 import { FONTS_URL, theme } from './theme'
@@ -13,6 +14,8 @@ export interface AgentHudPanelProps {
   report?: ValidationReport
   warnings?: string[]
   error?: string
+  /** mtime of agent-map.md, ms since epoch — renders the freshness stamp. */
+  updatedAt?: number
 }
 
 const wrap: CSSProperties = {
@@ -36,11 +39,74 @@ const sectionTitle: CSSProperties = {
   margin: '32px 0 12px',
 }
 
-export function AgentHudPanel({ map, report, warnings = [], error }: AgentHudPanelProps) {
+function Freshness({ ts }: { ts: number }) {
+  const [now, setNow] = useState<number | null>(null)
+  useEffect(() => {
+    setNow(Date.now())
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  if (now === null) return null
+  const s = Math.max(0, Math.round((now - ts) / 1000))
+  const label = s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`
+  const stale = s > 3600
   return (
-    <div style={wrap}>
+    <span
+      style={{
+        fontSize: 11,
+        fontFamily: theme.fontMono,
+        color: stale ? theme.danger : theme.muted,
+      }}
+      title="How long ago the agent last touched agent-map.md"
+    >
+      updated {label} ago
+    </span>
+  )
+}
+
+function Progress({ map }: { map: AgentMap }) {
+  const total = map.tasks.length
+  if (total === 0) return null
+  const done = map.tasks.filter((t) => t.status === 'done').length
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span
+        style={{
+          width: 140,
+          height: 14,
+          border: `${theme.bw}px solid ${theme.line}`,
+          background: theme.card,
+          display: 'inline-block',
+        }}
+        role="progressbar"
+        aria-valuenow={done}
+        aria-valuemax={total}
+      >
+        <span
+          style={{
+            display: 'block',
+            height: '100%',
+            width: `${(done / total) * 100}%`,
+            background: theme.warnBg,
+            borderRight: done > 0 && done < total ? `${theme.bw}px solid ${theme.line}` : 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 800 }}>
+        {done}/{total} done
+      </span>
+    </span>
+  )
+}
+
+export function AgentHudPanel({ map, report, warnings = [], error, updatedAt }: AgentHudPanelProps) {
+  const [selection, setSelection] = useState<Selection>(null)
+
+  return (
+    <div style={{ ...wrap, paddingRight: selection ? 340 + 28 : 28 }}>
       <link rel="stylesheet" href={FONTS_URL} />
-      <header style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+      <header style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
         <h1
           style={{
             fontFamily: theme.fontHead,
@@ -56,6 +122,9 @@ export function AgentHudPanel({ map, report, warnings = [], error }: AgentHudPan
         <span style={{ fontSize: 12, color: theme.muted, fontFamily: theme.fontMono }}>
           agent-map.md
         </span>
+        {updatedAt !== undefined && <Freshness ts={updatedAt} />}
+        <span style={{ flex: 1 }} />
+        {map && <Progress map={map} />}
       </header>
 
       {error ? (
@@ -66,11 +135,11 @@ export function AgentHudPanel({ map, report, warnings = [], error }: AgentHudPan
           <div>
             <div style={sectionTitle}>Map</div>
           </div>
-          <MapView map={map} report={report} />
+          <MapView map={map} report={report} selection={selection} onSelect={setSelection} />
           <div>
             <div style={sectionTitle}>Tasks</div>
           </div>
-          <KanbanView map={map} />
+          <KanbanView map={map} onSelect={setSelection} />
           {warnings.length > 0 && (
             <details style={{ marginTop: 28, fontSize: 12, color: theme.doing, fontWeight: 700 }}>
               <summary style={{ cursor: 'pointer' }}>
@@ -82,6 +151,15 @@ export function AgentHudPanel({ map, report, warnings = [], error }: AgentHudPan
                 ))}
               </ul>
             </details>
+          )}
+          {selection && (
+            <DetailDrawer
+              map={map}
+              report={report}
+              selection={selection}
+              onSelect={setSelection}
+              onClose={() => setSelection(null)}
+            />
           )}
         </>
       ) : (

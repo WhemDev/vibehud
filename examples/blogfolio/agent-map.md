@@ -21,16 +21,36 @@ pages:
     label: Blog
     path: /blog
     status: done
+    elements:
+      - name: PostList
+        kind: list
+        status: done
+      - name: SubscribeBox
+        kind: form
+        status: doing
   - id: post
     label: Blog post
     path: /blog/[slug]
     status: doing
+    elements:
+      - name: MarkdownBody
+        kind: component
+        status: doing
   - id: contact
     label: Contact
     path: /contact
     status: done
 
+apis:
+  - id: subscribe-api
+    label: Subscribe API
+    path: /api/subscribe
+    methods: [POST]
+
 relations:
+  - from: blog
+    to: subscribe-api
+    type: data
   - from: home
     to: about
   - from: home

@@ -20,10 +20,24 @@ pages:                    # the screens/routes of the app
     path: /               # required — the route as the router sees it,
                           # dynamic segments literal: /blog/[slug]
     status: done          # todo | doing | done (default done)
+    note: "free text"     # optional, shown in the detail panel
+    elements:             # optional — what the page is made of
+      - HeroBanner        # string shorthand, or:
+      - name: PaymentForm # required
+        kind: form        # optional free text (component, form, list, ...)
+        status: doing     # optional todo | doing | done
 
-relations:                # optional edges between pages
-  - from: home            # page id
-    to: blog              # page id
+apis:                     # optional — the app's API route handlers
+  - id: products-api      # required, unique (shared id space with pages)
+    label: "Products API" # optional, defaults to id
+    path: /api/products   # required, validated against real route handlers
+    methods: [GET, POST]  # optional, defaults to [GET]
+    status: done          # todo | doing | done (default done)
+    note: "free text"     # optional
+
+relations:                # optional edges between pages and/or apis
+  - from: home            # page or api id
+    to: blog              # page or api id
     type: nav             # nav | data | auth | other (default nav)
 
 tasks:                    # optional work items, rendered as a kanban
@@ -38,9 +52,11 @@ tasks:                    # optional work items, rendered as a kanban
 
 - Parsers are lenient: unknown keys and invalid entries are ignored with
   warnings, never a crash.
-- `pages[].path` is compared against the real filesystem routes by the
-  validator; missing and undeclared routes are surfaced in the UI. This is the
-  contract that keeps the map honest.
+- `pages[].path` and `apis[].path` are compared against the real filesystem
+  routes and route handlers by the validator; missing and undeclared entries
+  are surfaced in the UI. This is the contract that keeps the map honest.
+- `elements` are declarative (not verified against code): use them to show
+  what a page is made of in the detail panel.
 - Dynamic route segments are written and matched literally (`[slug]`,
   `[...parts]`, `[[...opt]]`).
 - IDs are stable handles for relations and tasks; renaming a page's `id` means

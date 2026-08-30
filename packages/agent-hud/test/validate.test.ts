@@ -6,6 +6,7 @@ function mapWith(paths: string[]): AgentMap {
   return {
     version: 1,
     pages: paths.map((p, i) => ({ id: `p${i}`, label: p, path: p, status: 'done' as const })),
+    apis: [],
     relations: [],
     tasks: [],
   }

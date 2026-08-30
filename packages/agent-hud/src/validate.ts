@@ -1,8 +1,9 @@
 import type { AgentMap } from './schema'
+import type { ScannedApp } from './scanner'
 
 export interface ValidationReport {
   ok: boolean
-  /** Route paths that are both declared and present on disk. */
+  /** Page paths that are both declared and present on disk. */
   matched: string[]
   /** Declared in agent-map.md but no route exists. */
   missing: string[]
@@ -10,6 +11,12 @@ export interface ValidationReport {
   undeclared: string[]
   declaredCount: number
   foundCount: number
+  /** Same three buckets for API routes. */
+  apiMatched: string[]
+  apiMissing: string[]
+  apiUndeclared: string[]
+  apiDeclaredCount: number
+  apiFoundCount: number
 }
 
 export interface ValidateOptions {
@@ -24,26 +31,52 @@ export function normalizeRoute(p: string): string {
   return out
 }
 
-/** Compares the declared pages against the actual scanned routes. */
+function diff(declared: Set<string>, found: Set<string>) {
+  return {
+    matched: [...declared].filter((d) => found.has(d)).sort(),
+    missing: [...declared].filter((d) => !found.has(d)).sort(),
+    undeclared: [...found].filter((f) => !declared.has(f)).sort(),
+  }
+}
+
+/**
+ * Compares the declared pages (and, when a full ScannedApp is given, the
+ * declared API routes) against what actually exists on disk.
+ */
 export function validateMap(
   map: AgentMap,
-  routes: string[],
+  scanned: ScannedApp | string[],
   options: ValidateOptions = {},
 ): ValidationReport {
-  const ignore = new Set((options.ignore ?? ['/agent-hud']).map(normalizeRoute))
-  const declared = new Set(map.pages.map((p) => normalizeRoute(p.path)))
-  const found = new Set(routes.map(normalizeRoute).filter((r) => !ignore.has(r)))
+  const app: ScannedApp = Array.isArray(scanned) ? { pages: scanned, apis: [] } : scanned
+  const checkApis = !Array.isArray(scanned)
 
-  const matched = [...declared].filter((d) => found.has(d)).sort()
-  const missing = [...declared].filter((d) => !found.has(d)).sort()
-  const undeclared = [...found].filter((f) => !declared.has(f)).sort()
+  const ignore = new Set((options.ignore ?? ['/agent-hud']).map(normalizeRoute))
+  const declaredPages = new Set(map.pages.map((p) => normalizeRoute(p.path)))
+  const foundPages = new Set(app.pages.map(normalizeRoute).filter((r) => !ignore.has(r)))
+  const pages = diff(declaredPages, foundPages)
+
+  const declaredApis = new Set((map.apis ?? []).map((a) => normalizeRoute(a.path)))
+  const foundApis = new Set(app.apis.map((a) => normalizeRoute(a.path)).filter((r) => !ignore.has(r)))
+  const apis = checkApis
+    ? diff(declaredApis, foundApis)
+    : { matched: [], missing: [], undeclared: [] }
 
   return {
-    ok: missing.length === 0 && undeclared.length === 0,
-    matched,
-    missing,
-    undeclared,
-    declaredCount: declared.size,
-    foundCount: found.size,
+    ok:
+      pages.missing.length === 0 &&
+      pages.undeclared.length === 0 &&
+      apis.missing.length === 0 &&
+      apis.undeclared.length === 0,
+    matched: pages.matched,
+    missing: pages.missing,
+    undeclared: pages.undeclared,
+    declaredCount: declaredPages.size,
+    foundCount: foundPages.size,
+    apiMatched: apis.matched,
+    apiMissing: apis.missing,
+    apiUndeclared: apis.undeclared,
+    apiDeclaredCount: declaredApis.size,
+    apiFoundCount: foundApis.size,
   }
 }

@@ -1,11 +1,29 @@
 export type Status = 'todo' | 'doing' | 'done'
 export type RelationType = 'nav' | 'data' | 'auth' | 'other'
 
+export interface PageElement {
+  name: string
+  /** e.g. component, form, list, chart — free text, shown as a chip */
+  kind?: string
+  status?: Status
+}
+
 export interface PageNode {
   id: string
   label: string
   path: string
   status: Status
+  elements?: PageElement[]
+  note?: string
+}
+
+export interface ApiRoute {
+  id: string
+  label: string
+  path: string
+  methods: string[]
+  status: Status
+  note?: string
 }
 
 export interface Relation {
@@ -25,6 +43,7 @@ export interface AgentMap {
   version: number
   app?: string
   pages: PageNode[]
+  apis: ApiRoute[]
   relations: Relation[]
   tasks: Task[]
 }
@@ -36,7 +55,8 @@ export interface NormalizeResult {
 
 const STATUSES: Status[] = ['todo', 'doing', 'done']
 const RELATION_TYPES: RelationType[] = ['nav', 'data', 'auth', 'other']
-const KNOWN_KEYS = new Set(['version', 'app', 'pages', 'relations', 'tasks'])
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
+const KNOWN_KEYS = new Set(['version', 'app', 'pages', 'apis', 'relations', 'tasks'])
 
 function asString(v: unknown): string | undefined {
   if (typeof v === 'string' && v.trim() !== '') return v.trim()
@@ -50,7 +70,7 @@ function asString(v: unknown): string | undefined {
  */
 export function normalizeMap(raw: unknown): NormalizeResult {
   const warnings: string[] = []
-  const map: AgentMap = { version: 1, pages: [], relations: [], tasks: [] }
+  const map: AgentMap = { version: 1, pages: [], apis: [], relations: [], tasks: [] }
 
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     warnings.push('agent-map block is not a YAML mapping; using an empty map')
@@ -82,12 +102,46 @@ export function normalizeMap(raw: unknown): NormalizeResult {
       continue
     }
     seenPageIds.add(id)
-    map.pages.push({
+    const page: PageNode = {
       id,
       path,
       label: asString(e.label) ?? id,
       status: normalizeStatus(e.status, 'done', `pages[${i}]`, warnings),
-    })
+    }
+    const elements = normalizeElements(e.elements, `pages[${i}]`, warnings)
+    if (elements.length > 0) page.elements = elements
+    const note = asString(e.note)
+    if (note) page.note = note
+    map.pages.push(page)
+  }
+
+  const seenApiIds = new Set<string>()
+  for (const [i, entry] of toArray(obj.apis, 'apis', warnings).entries()) {
+    const e = asObject(entry)
+    const id = e && asString(e.id)
+    const path = e && asString(e.path)
+    if (!id || !path) {
+      warnings.push(`apis[${i}] needs both "id" and "path"; dropped`)
+      continue
+    }
+    if (seenApiIds.has(id) || seenPageIds.has(id)) {
+      warnings.push(`apis[${i}] duplicates id "${id}"; dropped`)
+      continue
+    }
+    seenApiIds.add(id)
+    const methods = toArray(e.methods, `apis[${i}].methods`, warnings)
+      .map((m) => asString(m)?.toUpperCase())
+      .filter((m): m is string => !!m && HTTP_METHODS.includes(m))
+    const api: ApiRoute = {
+      id,
+      path,
+      label: asString(e.label) ?? id,
+      methods: methods.length > 0 ? methods : ['GET'],
+      status: normalizeStatus(e.status, 'done', `apis[${i}]`, warnings),
+    }
+    const note = asString(e.note)
+    if (note) api.note = note
+    map.apis.push(api)
   }
 
   for (const [i, entry] of toArray(obj.relations, 'relations', warnings).entries()) {
@@ -132,6 +186,32 @@ export function normalizeMap(raw: unknown): NormalizeResult {
   }
 
   return { map, warnings }
+}
+
+function normalizeElements(v: unknown, where: string, warnings: string[]): PageElement[] {
+  if (v === undefined || v === null) return []
+  const out: PageElement[] = []
+  for (const [i, entry] of toArray(v, `${where}.elements`, warnings).entries()) {
+    const asStr = asString(entry)
+    if (asStr) {
+      out.push({ name: asStr })
+      continue
+    }
+    const e = asObject(entry)
+    const name = e && asString(e.name)
+    if (!name) {
+      warnings.push(`${where}.elements[${i}] needs a "name"; dropped`)
+      continue
+    }
+    const el: PageElement = { name }
+    const kind = e ? asString(e.kind) : undefined
+    if (kind) el.kind = kind
+    if (e?.status !== undefined) {
+      el.status = normalizeStatus(e.status, 'done', `${where}.elements[${i}]`, warnings)
+    }
+    out.push(el)
+  }
+  return out
 }
 
 function toArray(v: unknown, key: string, warnings: string[]): unknown[] {

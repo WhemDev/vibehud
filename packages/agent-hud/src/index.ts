@@ -1,10 +1,12 @@
 export { parseAgentMap, type ParseResult } from './parser'
-export { scanNextAppRoutes } from './scanner'
+export { scanNextApp, scanNextAppRoutes, type ScannedApp, type ScannedApi } from './scanner'
 export { validateMap, normalizeRoute, type ValidationReport, type ValidateOptions } from './validate'
 export {
   normalizeMap,
   type AgentMap,
   type PageNode,
+  type PageElement,
+  type ApiRoute,
   type Relation,
   type Task,
   type Status,

@@ -1,9 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { parseAgentMap } from './parser'
 import { AgentHudPanel } from './panel/AgentHudPanel'
 import { AutoRefresh } from './panel/AutoRefresh'
-import { scanNextAppRoutes } from './scanner'
+import { scanNextApp } from './scanner'
 import { validateMap, type ValidationReport } from './validate'
 
 export interface AgentHudPageOptions {
@@ -70,17 +70,24 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
 
   let report: ValidationReport | undefined
   if (existsSync(appDir)) {
-    report = validateMap(map, scanNextAppRoutes(appDir), {
+    report = validateMap(map, scanNextApp(appDir), {
       ignore: [options.hudRoute ?? '/agent-hud'],
     })
   } else {
     warnings.push(`no Next.js app directory found at ${appDir}; validation skipped`)
   }
 
+  let updatedAt: number | undefined
+  try {
+    updatedAt = statSync(mapPath).mtimeMs
+  } catch {
+    /* freshness stamp is optional */
+  }
+
   return (
     <>
       {refresh}
-      <AgentHudPanel map={map} report={report} warnings={warnings} />
+      <AgentHudPanel map={map} report={report} warnings={warnings} updatedAt={updatedAt} />
     </>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import type { AgentMap, Status } from '../schema'
+import type { Selection } from './DetailDrawer'
 import { theme } from './theme'
 
 const COLUMNS: { key: Status; title: string }[] = [
@@ -9,7 +10,13 @@ const COLUMNS: { key: Status; title: string }[] = [
   { key: 'done', title: 'Done' },
 ]
 
-export function KanbanView({ map }: { map: AgentMap }) {
+export function KanbanView({
+  map,
+  onSelect,
+}: {
+  map: AgentMap
+  onSelect?: (s: Selection) => void
+}) {
   const pageLabel = new Map(map.pages.map((p) => [p.id, p.label]))
 
   if (map.tasks.length === 0) {
@@ -46,7 +53,9 @@ export function KanbanView({ map }: { map: AgentMap }) {
             {tasks.map((t) => (
               <div
                 key={t.id}
+                onClick={() => onSelect?.({ kind: 'task', id: t.id })}
                 style={{
+                  cursor: onSelect ? 'pointer' : 'default',
                   background: theme.card,
                   border: `${theme.bw}px solid ${theme.line}`,
                   boxShadow: theme.shadowSmall,
