@@ -15,9 +15,10 @@ against the real Next.js app-directory routes so the map cannot silently lie.
 1. **Schema & file location** — `agent-map.md` at repo root (user-confirmed),
    markdown prose + one fenced ` ```yaml agent-map ` block. Schema below.
 2. **Mounting** — dev-only route inside the user's app (user-confirmed).
-   The agent creates `app/_map/page.tsx`, a **server component** that reads the
-   file, runs the scanner, and renders the client panel. Returns 404 when
-   `NODE_ENV === 'production'` unless `AGENT_HUD_ENABLE=1`.
+   The agent creates `app/agent-hud/page.tsx`, a **server component** that reads
+   the file, runs the scanner, and renders the client panel. (Originally planned
+   as `app/_map`, but Next.js excludes `_`-prefixed folders from routing.)
+   Renders nothing when `NODE_ENV === 'production'` unless `AGENT_HUD_ENABLE=1`.
 3. **Layout** — v1 is deliberately plain: validation badge on top, map (SVG,
    hand-rolled layered layout) above, kanban (3 columns) below, in one scrolling
    page. Visual style intentionally minimal — production style will be chosen
@@ -62,7 +63,7 @@ Shipped as TypeScript/TSX source (`src/`), consumers use Next.js
   fenced yaml block; tolerant of ```yml, info strings, missing block)
 - `src/scanner.ts` — `scanNextAppRoutes(appDir)` → route paths. Handles
   `page.{tsx,ts,jsx,js}`, route groups `(group)`, dynamic `[slug]`, catch-all
-  `[...x]`, `[[...x]]`, ignores `_map` itself, `api/`, private `_folders`.
+  `[...x]`, `[[...x]]`, ignores private `_folders`, `@slots`, and non-page files.
 - `src/validate.ts` — `validateMap(map, routes)` → `{ matched, undeclared,
   missing }` where dynamic segments match declared paths (`/blog/[slug]` matches
   a declared `/blog/[slug]` literally; no param inference in v1).

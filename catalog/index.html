@@ -1,0 +1,314 @@
+<title>Agent HUD Style Catalog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=JetBrains+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Figtree:wght@400;600;700&family=Archivo:wght@500;700;800&family=Outfit:wght@400;600&family=Press+Start+2P&display=swap">
+<style>
+  :root {
+    --pg-bg: #fbfaf8;
+    --pg-card: #ffffff;
+    --pg-ink: #23262a;
+    --pg-muted: #6d737b;
+    --pg-line: #e5e2dc;
+    --pg-accent: #3d6b8f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --pg-bg: #141519;
+      --pg-card: #1b1d22;
+      --pg-ink: #e7e8ea;
+      --pg-muted: #969ca6;
+      --pg-line: #2b2e35;
+      --pg-accent: #7fa8c9;
+    }
+  }
+  :root[data-theme="dark"] {
+    --pg-bg: #141519;
+    --pg-card: #1b1d22;
+    --pg-ink: #e7e8ea;
+    --pg-muted: #969ca6;
+    --pg-line: #2b2e35;
+    --pg-accent: #7fa8c9;
+  }
+
+  body {
+    background: var(--pg-bg);
+    color: var(--pg-ink);
+    font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    margin: 0;
+    padding: 48px 24px 80px;
+  }
+  .page { max-width: 1240px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--pg-accent); margin: 0 0 10px;
+  }
+  h1 { font-size: 30px; margin: 0 0 12px; text-wrap: balance; }
+  .lede { max-width: 62ch; color: var(--pg-muted); font-size: 15px; line-height: 1.6; margin: 0 0 8px; }
+  .grid {
+    display: grid; gap: 28px; margin-top: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  .tile {
+    background: var(--pg-card); border: 1px solid var(--pg-line);
+    border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .tile-head { padding: 18px 20px 14px; }
+  .tile-id {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--pg-accent); letter-spacing: 0.05em;
+  }
+  .tile-name { font-size: 18px; font-weight: 700; margin: 4px 0 6px; }
+  .tile-desc { font-size: 13px; line-height: 1.55; color: var(--pg-muted); margin: 0; }
+
+  /* ---- shared demo structure, all values from per-style tokens ---- */
+  .demo {
+    flex: 1; padding: 22px; background: var(--bg);
+    background-image: var(--bg-decor, none); background-size: var(--bg-size, auto);
+    font-family: var(--f-body); color: var(--ink);
+    border-top: 1px solid var(--pg-line);
+  }
+  .hud-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .hud-app {
+    font-family: var(--f-head); font-weight: var(--head-weight, 700);
+    font-size: var(--head-size, 16px); letter-spacing: var(--head-tracking, 0);
+    text-transform: var(--head-case, none); color: var(--head-ink, var(--ink));
+  }
+  .hud-file { font-size: 10px; color: var(--muted); font-family: var(--f-mono, var(--f-body)); }
+
+  .badge, .chip {
+    display: inline-block; font-size: var(--small, 11px); line-height: 1.5;
+    border: var(--bw, 1px) solid; border-radius: var(--radius, 6px);
+    padding: 5px 10px; box-shadow: var(--pop-shadow, none);
+  }
+  .badge { border-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); }
+  .chip { border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok-ink); margin-left: 8px; }
+  .badge b, .chip b { font-weight: 700; }
+
+  .map { margin: 14px 0; width: 100%; height: auto; display: block; }
+  .map .node {
+    fill: var(--card); stroke: var(--line);
+    stroke-width: var(--bw, 1px); rx: var(--radius, 6px);
+    filter: var(--node-filter, none);
+  }
+  .map .node.missing { stroke: var(--danger); stroke-dasharray: 5 3; }
+  .map .edge { stroke: var(--edge, var(--line)); stroke-width: 1.5; fill: none; }
+  .map .nlabel { font-family: var(--f-body); font-size: 11px; font-weight: 600; fill: var(--ink); }
+  .map .npath { font-family: var(--f-mono, var(--f-body)); font-size: 9px; fill: var(--muted); }
+  .map .npath.missing { fill: var(--danger); }
+  .map .dot-done { fill: var(--ok); } .map .dot-doing { fill: var(--doing); } .map .dot-todo { fill: var(--muted); }
+
+  .cols { display: flex; gap: 10px; }
+  .col {
+    flex: 1; background: var(--well, transparent);
+    border: var(--well-bw, 0) solid var(--line);
+    border-radius: var(--radius, 6px); padding: 8px;
+  }
+  .col-t { font-size: 10px; font-weight: 700; color: var(--muted); margin: 0 2px 8px;
+    text-transform: uppercase; letter-spacing: 0.08em; }
+  .card {
+    background: var(--card); border: var(--bw, 1px) solid var(--line);
+    border-radius: var(--radius, 6px); padding: 7px 9px; font-size: 11.5px;
+    box-shadow: var(--pop-shadow, none); margin-bottom: 6px;
+  }
+  .card .tag {
+    display: inline-block; margin-top: 4px; font-size: 9px; padding: 1px 6px;
+    border-radius: var(--radius, 6px); background: var(--tag-bg); color: var(--tag-ink);
+  }
+  .pills { margin-top: 14px; display: flex; gap: 8px; align-items: center; }
+  .pill {
+    font-size: 10px; padding: 3px 9px; border-radius: var(--pill-radius, 99px);
+    border: var(--bw, 1px) solid var(--line); color: var(--muted); background: var(--card);
+  }
+  .pill.doing { color: var(--doing); border-color: var(--doing); }
+  .pill.done { color: var(--ok); border-color: var(--ok); }
+
+  /* ---------- 1 terminal ---------- */
+  .s-terminal {
+    --bg: #0a0f0b; --card: #0e1610; --well: #0c130d; --well-bw: 1px;
+    --ink: #b8f0bc; --muted: #4f7f58; --line: #1e3a26; --edge: #2c5637;
+    --ok: #46f06a; --doing: #ffd24d; --danger: #ff6459;
+    --warn-bg: #16130a; --warn-line: #6e5a1c; --warn-ink: #ffd24d;
+    --ok-bg: #0b1a10; --ok-line: #1f5c31; --ok-ink: #46f06a;
+    --tag-bg: #16281a; --tag-ink: #7fd18a;
+    --radius: 0px; --pill-radius: 0px; --small: 10.5px;
+    --f-head: 'JetBrains Mono', monospace; --f-body: 'JetBrains Mono', monospace; --f-mono: 'JetBrains Mono', monospace;
+    --head-size: 14px; --head-case: uppercase; --head-tracking: 0.08em;
+    --bg-decor: repeating-linear-gradient(0deg, rgba(90, 255, 120, 0.03) 0 1px, transparent 1px 3px);
+  }
+  /* ---------- 2 blueprint ---------- */
+  .s-blueprint {
+    --bg: #123a63; --card: #16436f; --well: #10365c; --well-bw: 1px;
+    --ink: #e3eefb; --muted: #8fb4d9; --line: #4d7cab; --edge: #7fa8d1;
+    --ok: #9fe6b0; --doing: #ffd166; --danger: #ff9d8f;
+    --warn-bg: #1a4066; --warn-line: #c8a94e; --warn-ink: #ffd166;
+    --ok-bg: #14446a; --ok-line: #5e9b73; --ok-ink: #9fe6b0;
+    --tag-bg: #1d4d7c; --tag-ink: #b9d4ee;
+    --radius: 2px; --pill-radius: 2px;
+    --f-head: 'IBM Plex Mono', monospace; --f-body: 'IBM Plex Mono', monospace; --f-mono: 'IBM Plex Mono', monospace;
+    --head-size: 14px; --head-case: uppercase; --head-tracking: 0.14em; --head-weight: 500;
+    --bg-decor:
+      linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.055) 1px, transparent 1px);
+    --bg-size: 22px 22px;
+  }
+  /* ---------- 3 midnight ---------- */
+  .s-midnight {
+    --bg: #101114; --card: #17181d; --well: #141519; --well-bw: 1px;
+    --ink: #e8e9ed; --muted: #8a8f9b; --line: #26282f; --edge: #34363f;
+    --ok: #4cc38a; --doing: #d3a44a; --danger: #e5635a;
+    --warn-bg: #1d1a14; --warn-line: #4a4028; --warn-ink: #d3a44a;
+    --ok-bg: #14201a; --ok-line: #2b4a3a; --ok-ink: #4cc38a;
+    --tag-bg: #23252d; --tag-ink: #a9aeba;
+    --radius: 8px; --small: 11px;
+    --f-head: 'Figtree', sans-serif; --f-body: 'Figtree', sans-serif; --f-mono: 'JetBrains Mono', monospace;
+    --node-filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  }
+  .s-midnight .hud-app { background: linear-gradient(90deg, #e8e9ed, #9aa2f5); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* ---------- 4 quiet ---------- */
+  .s-quiet {
+    --bg: #ffffff; --card: #ffffff; --well: #f6f7f8; --well-bw: 0;
+    --ink: #24292f; --muted: #828a93; --line: #e4e7ea; --edge: #d4d8dc;
+    --ok: #2e9e5b; --doing: #d09a2c; --danger: #d64545;
+    --warn-bg: #fdf7ea; --warn-line: #efdcae; --warn-ink: #8a6516;
+    --ok-bg: #f1faf4; --ok-line: #cbe8d5; --ok-ink: #23744a;
+    --tag-bg: #eef0f2; --tag-ink: #5a626b;
+    --radius: 6px;
+    --f-head: 'Public Sans', sans-serif; --f-body: 'Public Sans', sans-serif; --f-mono: 'JetBrains Mono', monospace;
+    --head-size: 15px;
+  }
+  /* ---------- 5 brutalist ---------- */
+  .s-brutalist {
+    --bg: #f2efe6; --card: #ffffff; --well: #e9e4d4; --well-bw: 2px;
+    --ink: #14120e; --muted: #55503f; --line: #14120e; --edge: #14120e;
+    --ok: #16a34a; --doing: #e8952f; --danger: #e23c2e;
+    --warn-bg: #ffe14d; --warn-line: #14120e; --warn-ink: #14120e;
+    --ok-bg: #a7f3c0; --ok-line: #14120e; --ok-ink: #14120e;
+    --tag-bg: #14120e; --tag-ink: #ffe14d;
+    --radius: 0px; --pill-radius: 0px; --bw: 2px;
+    --pop-shadow: 3px 3px 0 #14120e;
+    --f-head: 'Archivo', sans-serif; --f-body: 'Archivo', sans-serif; --f-mono: 'JetBrains Mono', monospace;
+    --head-weight: 800; --head-case: uppercase; --head-size: 17px;
+  }
+  /* ---------- 6 aurora ---------- */
+  .s-aurora {
+    --bg: #131320; --card: rgba(255,255,255,0.07); --well: rgba(255,255,255,0.045); --well-bw: 1px;
+    --ink: #eef0ff; --muted: #9aa0c0; --line: rgba(255,255,255,0.16); --edge: rgba(255,255,255,0.28);
+    --ok: #7ee0b2; --doing: #f0c674; --danger: #ff8f9e;
+    --warn-bg: rgba(240,198,116,0.12); --warn-line: rgba(240,198,116,0.4); --warn-ink: #f0c674;
+    --ok-bg: rgba(126,224,178,0.12); --ok-line: rgba(126,224,178,0.4); --ok-ink: #7ee0b2;
+    --tag-bg: rgba(255,255,255,0.12); --tag-ink: #c9cdea;
+    --radius: 14px; --small: 11px;
+    --f-head: 'Outfit', sans-serif; --f-body: 'Outfit', sans-serif; --f-mono: 'JetBrains Mono', monospace;
+    --bg-decor:
+      radial-gradient(420px 260px at 12% 0%, rgba(124,92,255,0.35), transparent 68%),
+      radial-gradient(430px 280px at 95% 100%, rgba(45,212,191,0.26), transparent 68%);
+  }
+  .s-aurora .card, .s-aurora .badge, .s-aurora .chip, .s-aurora .col { backdrop-filter: blur(7px); }
+  /* ---------- 7 journal ---------- */
+  .s-journal {
+    --bg: #f7f3ea; --card: #fdfbf5; --well: #f0eadb; --well-bw: 1px;
+    --ink: #2b2620; --muted: #857c6d; --line: #ded5c2; --edge: #c9bfa8;
+    --ok: #3e5c46; --doing: #a2652a; --danger: #a53e33;
+    --warn-bg: #f6ecd8; --warn-line: #dcc48f; --warn-ink: #7c5c1c;
+    --ok-bg: #eaf0e7; --ok-line: #c2d1bd; --ok-ink: #3e5c46;
+    --tag-bg: #ece5d4; --tag-ink: #6d6353;
+    --radius: 3px; --pill-radius: 3px;
+    --f-head: 'Fraunces', serif; --f-body: 'Public Sans', sans-serif; --f-mono: 'JetBrains Mono', monospace;
+    --head-size: 18px; --head-weight: 700;
+  }
+  .s-journal .demo { border-top-style: double; border-top-width: 3px; border-top-color: var(--edge); }
+  /* ---------- 8 arcade ---------- */
+  .s-arcade {
+    --bg: #1a1033; --card: #241747; --well: #1f1440; --well-bw: 2px;
+    --ink: #eae6ff; --muted: #8d7fc9; --line: #4a3a8c; --edge: #7afcff;
+    --ok: #7dff9c; --doing: #ffd35e; --danger: #ff7ac3;
+    --warn-bg: #2c1c4f; --warn-line: #ffd35e; --warn-ink: #ffd35e;
+    --ok-bg: #1c2f4a; --ok-line: #7dff9c; --ok-ink: #7dff9c;
+    --tag-bg: #37246b; --tag-ink: #b9aef2;
+    --radius: 0px; --pill-radius: 0px; --bw: 2px; --small: 8px;
+    --pop-shadow: 3px 3px 0 #0c081e;
+    --f-head: 'Press Start 2P', monospace; --f-body: 'Outfit', sans-serif; --f-mono: 'JetBrains Mono', monospace;
+    --head-size: 11px; --head-weight: 400; --head-ink: #7afcff;
+  }
+  .s-arcade .col-t { font-family: 'Press Start 2P', monospace; font-size: 7px; }
+
+  .foot { margin-top: 44px; font-size: 13px; color: var(--pg-muted); max-width: 66ch; line-height: 1.6; }
+  .foot code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--pg-accent); }
+</style>
+
+<div class="page">
+  <p class="eyebrow">agent-hud</p>
+  <h1>Agent HUD Style Catalog</h1>
+  <p class="lede">Eight visual directions for the production panel, each rendering the same
+  sample state: the drift badge, the page map with one missing route, kanban cards, and
+  status pills. Every direction is driven by the same token set the real panel will use,
+  so whichever you pick maps 1:1 onto implementation.</p>
+  <p class="lede">To choose, reply with the style id (e.g. <b>midnight</b>) — or name a blend,
+  like "midnight layout with blueprint's map".</p>
+
+  <div class="grid" id="grid"></div>
+
+  <p class="foot">Built overnight as part of the agent-hud v1 build. The current shipped panel is the
+  unstyled baseline; the chosen direction becomes <code>panel/theme.ts</code> tokens in a follow-up
+  pass. All fonts shown are on Google Fonts.</p>
+</div>
+
+<script>
+  const STYLES = [
+    { id: 'terminal', name: 'Terminal', desc: 'Phosphor mono on near-black, square corners, scanline texture. Reads as "the agent’s own console" — at home next to a CLI.' },
+    { id: 'blueprint', name: 'Blueprint', desc: 'Drafting-table blue with grid paper and chalk-yellow warnings. Leans into the "map of the build" metaphor; technical but friendly.' },
+    { id: 'midnight', name: 'Midnight', desc: 'Linear-style product dark: quiet slate surfaces, hairline borders, restrained color reserved for status. The safest "serious tool" look.' },
+    { id: 'quiet', name: 'Quiet', desc: 'Notion-adjacent white minimalism. Nothing competes with the content; status colors are the only ink spent. Best for embedding in any app unnoticed.' },
+    { id: 'brutalist', name: 'Brutalist', desc: 'Hard black borders, offset shadows, flat process-yellow alerts. Loud, screenshot-friendly, very "indie dev tool of the week".' },
+    { id: 'aurora', name: 'Aurora', desc: 'Frosted glass cards floating over violet-teal light. The most "vibe coding platform" of the set — matches Lovable/Bolt aesthetics.' },
+    { id: 'journal', name: 'Journal', desc: 'Warm paper, serif headings, double-rule dividers. Frames the map as the project’s field notebook rather than a dashboard.' },
+    { id: 'arcade', name: 'Arcade', desc: 'CRT purples, pixel type for headings, hard drop shadows. Pure fun; the demo video would be unmistakable in a feed.' },
+  ]
+
+  const DEMO = `
+    <div class="hud-head"><span class="hud-app">Shoply</span><span class="hud-file">agent-map.md</span></div>
+    <div>
+      <span class="badge"><b>&#9888; map drift</b> &nbsp;declares 6 &middot; 7 exist &middot; 1 missing &middot; 2 undeclared</span><span class="chip"><b>&#10003; verified</b></span>
+    </div>
+    <svg class="map" viewBox="0 0 520 128" role="img" aria-label="sample page map">
+      <path class="edge" d="M150 34 H 190"></path>
+      <path class="edge" d="M340 34 H 380"></path>
+      <path class="edge" d="M75 48 V 76 H 190"></path>
+      <rect class="node" x="10" y="14" width="140" height="40"></rect>
+      <circle class="dot-done" cx="24" cy="27" r="3.5"></circle>
+      <text class="nlabel" x="34" y="31">Home</text>
+      <text class="npath" x="34" y="45">/</text>
+      <rect class="node" x="190" y="14" width="150" height="40"></rect>
+      <circle class="dot-done" cx="204" cy="27" r="3.5"></circle>
+      <text class="nlabel" x="214" y="31">Products</text>
+      <text class="npath" x="214" y="45">/products</text>
+      <rect class="node" x="380" y="14" width="130" height="40"></rect>
+      <circle class="dot-doing" cx="394" cy="27" r="3.5"></circle>
+      <text class="nlabel" x="404" y="31">Checkout</text>
+      <text class="npath" x="404" y="45">/checkout</text>
+      <rect class="node missing" x="190" y="72" width="150" height="40"></rect>
+      <circle class="dot-todo" cx="204" cy="85" r="3.5"></circle>
+      <text class="nlabel" x="214" y="89">Wishlist</text>
+      <text class="npath missing" x="214" y="103">/wishlist &middot; missing</text>
+    </svg>
+    <div class="cols">
+      <div class="col"><div class="col-t">To do &middot; 1</div>
+        <div class="card">Build wishlist page<br><span class="tag">Wishlist</span></div></div>
+      <div class="col"><div class="col-t">Doing &middot; 1</div>
+        <div class="card">Stripe test mode<br><span class="tag">Checkout</span></div></div>
+      <div class="col"><div class="col-t">Done &middot; 1</div>
+        <div class="card">Product grid<br><span class="tag">Products</span></div></div>
+    </div>
+    <div class="pills"><span class="pill">todo</span><span class="pill doing">doing</span><span class="pill done">done</span></div>`
+
+  document.getElementById('grid').innerHTML = STYLES.map(s => `
+    <section class="tile">
+      <div class="tile-head">
+        <span class="tile-id">style: ${s.id}</span>
+        <div class="tile-name">${s.name}</div>
+        <p class="tile-desc">${s.desc}</p>
+      </div>
+      <div class="demo s-${s.id}">${DEMO}</div>
+    </section>`).join('')
+</script>
