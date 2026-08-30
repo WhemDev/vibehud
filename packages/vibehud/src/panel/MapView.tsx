@@ -1,5 +1,6 @@
 'use client'
 
+import dagre from '@dagrejs/dagre'
 import type { AgentMap } from '../schema'
 import { normalizeRoute, type ValidationReport } from '../validate'
 import type { Selection } from './DetailDrawer'
@@ -7,10 +8,8 @@ import { statusColor, theme } from './theme'
 import type { ApiHealth } from './useApiHealth'
 
 const NODE_W = 150
-const NODE_H = 52
+const PAGE_H = 52
 const BAND_H = 44
-const COL_GAP = 220
-const ROW_GAP = 80
 const PAD = 28
 const DIM = 0.22
 
@@ -23,54 +22,54 @@ const HEALTH_COLOR: Record<ApiHealth, string> = {
 }
 
 interface Positioned {
-  id: string
   x: number
   y: number
   w: number
   h: number
 }
 
-/** BFS layering from the root page ('/' if declared, else the first page). */
-function layoutPages(map: AgentMap): { pos: Map<string, Positioned>; bottom: number } {
-  const byId = new Map(map.pages.map((p) => [p.id, p]))
-  const children = new Map<string, string[]>()
+interface LaidOut {
+  pos: Map<string, Positioned>
+  edges: { points: { x: number; y: number }[]; type: string; from: string; to: string }[]
+  width: number
+  height: number
+}
+
+/**
+ * Layered graph layout via dagre (Sugiyama-style): handles multi-parent
+ * nodes, minimizes crossings, and lays out disconnected components side by
+ * side — pages, APIs, and systems in one unified graph.
+ */
+function layoutGraph(map: AgentMap): LaidOut {
+  const g = new dagre.graphlib.Graph()
+  g.setGraph({ rankdir: 'LR', nodesep: 22, ranksep: 64, marginx: PAD, marginy: PAD })
+  g.setDefaultEdgeLabel(() => ({}))
+
+  for (const p of map.pages) g.setNode(p.id, { width: NODE_W, height: PAGE_H })
+  for (const a of map.apis) g.setNode(a.id, { width: NODE_W, height: BAND_H })
+  for (const s of map.systems) g.setNode(s.id, { width: NODE_W, height: BAND_H })
   for (const r of map.relations) {
-    if (!byId.has(r.from) || !byId.has(r.to)) continue
-    children.set(r.from, [...(children.get(r.from) ?? []), r.to])
+    if (g.hasNode(r.from) && g.hasNode(r.to)) g.setEdge(r.from, r.to)
   }
 
-  const root = map.pages.find((p) => normalizeRoute(p.path) === '/') ?? map.pages[0]
-  const layerOf = new Map<string, number>()
-  if (root) {
-    const queue: string[] = [root.id]
-    layerOf.set(root.id, 0)
-    while (queue.length) {
-      const id = queue.shift()!
-      for (const child of children.get(id) ?? []) {
-        if (!layerOf.has(child)) {
-          layerOf.set(child, layerOf.get(id)! + 1)
-          queue.push(child)
-        }
-      }
-    }
-  }
-  const maxLayer = Math.max(0, ...layerOf.values())
-  for (const p of map.pages) {
-    if (!layerOf.has(p.id)) layerOf.set(p.id, maxLayer + 1)
-  }
+  dagre.layout(g)
 
-  const rows = new Map<number, number>()
   const pos = new Map<string, Positioned>()
-  let bottom = PAD
-  for (const p of map.pages) {
-    const layer = layerOf.get(p.id)!
-    const row = rows.get(layer) ?? 0
-    rows.set(layer, row + 1)
-    const y = PAD + row * ROW_GAP
-    pos.set(p.id, { id: p.id, x: PAD + layer * COL_GAP, y, w: NODE_W, h: NODE_H })
-    bottom = Math.max(bottom, y + NODE_H)
+  for (const id of g.nodes()) {
+    const n = g.node(id)
+    pos.set(id, { x: n.x - n.width / 2, y: n.y - n.height / 2, w: n.width, h: n.height })
   }
-  return { pos, bottom }
+  const edges = g.edges().map((e) => {
+    const rel = map.relations.find((r) => r.from === e.v && r.to === e.w)
+    return { points: g.edge(e).points ?? [], type: rel?.type ?? 'nav', from: e.v, to: e.w }
+  })
+  const graph = g.graph()
+  return {
+    pos,
+    edges,
+    width: Math.max(graph.width ?? 0, 300) + 4,
+    height: Math.max(graph.height ?? 0, 120) + 4,
+  }
 }
 
 export function MapView({
@@ -88,26 +87,13 @@ export function MapView({
   query?: string
   health?: Record<string, ApiHealth>
 }) {
-  const { pos, bottom } = layoutPages(map)
-  const apiY = bottom + 46
-  map.apis.forEach((a, i) => {
-    pos.set(a.id, { id: a.id, x: PAD + i * (NODE_W + 44), y: apiY, w: NODE_W, h: BAND_H })
-  })
-  const sysY = map.apis.length > 0 ? apiY + BAND_H + 46 : apiY
-  map.systems.forEach((s, i) => {
-    pos.set(s.id, { id: s.id, x: PAD + i * (NODE_W + 44), y: sysY, w: NODE_W, h: BAND_H })
-  })
-
-  const missing = new Set(report?.missing ?? [])
-  const apiMissing = new Set(report?.apiMissing ?? [])
-
-  const all = [...pos.values()]
-  const width = Math.max(...all.map((n) => n.x + n.w), 300) + PAD + 4
-  const height = Math.max(...all.map((n) => n.y + n.h), 120) + PAD + 4
-
-  if (all.length === 0) {
+  if (map.pages.length === 0 && map.apis.length === 0 && map.systems.length === 0) {
     return <p style={{ fontSize: 14, color: theme.muted }}>Nothing declared yet.</p>
   }
+
+  const { pos, edges, width, height } = layoutGraph(map)
+  const missing = new Set(report?.missing ?? [])
+  const apiMissing = new Set(report?.apiMissing ?? [])
 
   // Focus set: the selected node plus its direct neighbors.
   const focus = new Set<string>()
@@ -134,20 +120,6 @@ export function MapView({
   const isSelected = (id: string) =>
     selection != null && selection.kind !== 'task' && selection.id === id
 
-  const bandLabel = (y: number, text: string) => (
-    <text
-      x={PAD}
-      y={y - 14}
-      fontSize={10}
-      fontWeight={800}
-      letterSpacing="0.1em"
-      fontFamily={theme.fontBody}
-      fill={theme.muted}
-    >
-      {text}
-    </text>
-  )
-
   return (
     <div
       style={{
@@ -163,32 +135,18 @@ export function MapView({
             <path d="M0 0 L8 4 L0 8 z" fill={theme.line} />
           </marker>
         </defs>
-        {map.apis.length > 0 && bandLabel(apiY, 'API ROUTES')}
-        {map.systems.length > 0 && bandLabel(sysY, 'SYSTEMS')}
-        {map.relations.map((r, i) => {
-          const a = pos.get(r.from)
-          const b = pos.get(r.to)
-          if (!a || !b) return null
-          const vertical = Math.abs(b.y - a.y) > ROW_GAP
-          const edgeOpacity = Math.min(
-            opacityOf.get(r.from) ?? 1,
-            opacityOf.get(r.to) ?? 1,
-          )
-          return (
-            <line
-              key={i}
-              x1={vertical ? a.x + a.w / 2 : a.x + a.w}
-              y1={vertical ? a.y + a.h : a.y + a.h / 2}
-              x2={vertical ? b.x + b.w / 2 : b.x}
-              y2={vertical ? b.y : b.y + b.h / 2}
-              stroke={theme.line}
-              strokeWidth={1.5}
-              opacity={edgeOpacity}
-              strokeDasharray={r.type === 'nav' ? undefined : '4 3'}
-              markerEnd="url(#hud-arrow)"
-            />
-          )
-        })}
+        {edges.map((e, i) => (
+          <polyline
+            key={i}
+            points={e.points.map((p) => `${p.x},${p.y}`).join(' ')}
+            fill="none"
+            stroke={theme.line}
+            strokeWidth={1.5}
+            opacity={Math.min(opacityOf.get(e.from) ?? 1, opacityOf.get(e.to) ?? 1)}
+            strokeDasharray={e.type === 'nav' ? undefined : '4 3'}
+            markerEnd="url(#hud-arrow)"
+          />
+        ))}
         {map.pages.map((page) => {
           const n = pos.get(page.id)!
           const isMissing = missing.has(normalizeRoute(page.path))
@@ -270,19 +228,17 @@ export function MapView({
                 {isMissing ? `${api.path} · missing` : api.path}
               </text>
               {h && h !== 'unknown' && !isMissing && (
-                <g>
-                  <rect
-                    x={n.x + n.w - 16}
-                    y={n.y + 8}
-                    width={9}
-                    height={9}
-                    fill={HEALTH_COLOR[h]}
-                    stroke={theme.card}
-                    strokeWidth={1.5}
-                  >
-                    <title>{`health: ${h}`}</title>
-                  </rect>
-                </g>
+                <rect
+                  x={n.x + n.w - 16}
+                  y={n.y + 8}
+                  width={9}
+                  height={9}
+                  fill={HEALTH_COLOR[h]}
+                  stroke={theme.card}
+                  strokeWidth={1.5}
+                >
+                  <title>{`health: ${h}`}</title>
+                </rect>
               )}
             </g>
           )
