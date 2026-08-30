@@ -1,12 +1,17 @@
 'use client'
 
 import { useEffect, useState, type CSSProperties } from 'react'
+import type { EnvReport } from '../env'
+import type { HistoryEntry } from '../history'
 import type { AgentMap } from '../schema'
 import type { ValidationReport } from '../validate'
 import { DetailDrawer, type Selection } from './DetailDrawer'
+import { EnvSection } from './EnvSection'
+import { HistoryStrip } from './HistoryStrip'
 import { KanbanView } from './KanbanView'
 import { MapView } from './MapView'
 import { FONTS_URL, theme } from './theme'
+import { useApiHealth } from './useApiHealth'
 import { ValidationBadge } from './ValidationBadge'
 
 export interface AgentHudPanelProps {
@@ -16,6 +21,8 @@ export interface AgentHudPanelProps {
   error?: string
   /** mtime of agent-map.md, ms since epoch — renders the freshness stamp. */
   updatedAt?: number
+  envReport?: EnvReport
+  history?: HistoryEntry[]
 }
 
 const wrap: CSSProperties = {
@@ -100,8 +107,18 @@ function Progress({ map }: { map: AgentMap }) {
   )
 }
 
-export function AgentHudPanel({ map, report, warnings = [], error, updatedAt }: AgentHudPanelProps) {
+export function AgentHudPanel({
+  map,
+  report,
+  warnings = [],
+  error,
+  updatedAt,
+  envReport,
+  history = [],
+}: AgentHudPanelProps) {
   const [selection, setSelection] = useState<Selection>(null)
+  const [query, setQuery] = useState('')
+  const health = useApiHealth(map?.apis ?? [])
 
   return (
     <div style={{ ...wrap, paddingRight: selection ? 340 + 28 : 28 }}>
@@ -124,6 +141,25 @@ export function AgentHudPanel({ map, report, warnings = [], error, updatedAt }: 
         </span>
         {updatedAt !== undefined && <Freshness ts={updatedAt} />}
         <span style={{ flex: 1 }} />
+        {map && (
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="FILTER…"
+            aria-label="Filter the map and tasks"
+            style={{
+              fontFamily: theme.fontMono,
+              fontSize: 12,
+              padding: '7px 10px',
+              width: 150,
+              border: `${theme.bw}px solid ${theme.line}`,
+              boxShadow: theme.shadowSmall,
+              background: theme.card,
+              color: theme.ink,
+              outline: 'none',
+            }}
+          />
+        )}
         {map && <Progress map={map} />}
       </header>
 
@@ -132,14 +168,37 @@ export function AgentHudPanel({ map, report, warnings = [], error, updatedAt }: 
       ) : map ? (
         <>
           {report && <ValidationBadge report={report} />}
+          {history.length > 0 && (
+            <>
+              <div>
+                <div style={sectionTitle}>Recent changes</div>
+              </div>
+              <HistoryStrip history={history} />
+            </>
+          )}
           <div>
             <div style={sectionTitle}>Map</div>
           </div>
-          <MapView map={map} report={report} selection={selection} onSelect={setSelection} />
+          <MapView
+            map={map}
+            report={report}
+            selection={selection}
+            onSelect={setSelection}
+            query={query}
+            health={health}
+          />
+          {envReport && (envReport.vars.length > 0 || envReport.exampleUndeclared.length > 0) && (
+            <>
+              <div>
+                <div style={sectionTitle}>Env</div>
+              </div>
+              <EnvSection report={envReport} />
+            </>
+          )}
           <div>
             <div style={sectionTitle}>Tasks</div>
           </div>
-          <KanbanView map={map} onSelect={setSelection} />
+          <KanbanView map={map} onSelect={setSelection} query={query} />
           {warnings.length > 0 && (
             <details style={{ marginTop: 28, fontSize: 12, color: theme.doing, fontWeight: 700 }}>
               <summary style={{ cursor: 'pointer' }}>
@@ -159,6 +218,7 @@ export function AgentHudPanel({ map, report, warnings = [], error, updatedAt }: 
               selection={selection}
               onSelect={setSelection}
               onClose={() => setSelection(null)}
+              health={health}
             />
           )}
         </>

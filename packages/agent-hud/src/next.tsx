@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { buildEnvReport, scanEnvExample } from './env'
+import { getMapHistory } from './history'
 import { parseAgentMap } from './parser'
 import { AgentHudPanel } from './panel/AgentHudPanel'
 import { AutoRefresh } from './panel/AutoRefresh'
@@ -84,10 +86,24 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
     /* freshness stamp is optional */
   }
 
+  const envReport = buildEnvReport(
+    map.env,
+    scanEnvExample(root),
+    (name) => process.env[name] !== undefined && process.env[name] !== '',
+  )
+  const history = getMapHistory(root, file)
+
   return (
     <>
       {refresh}
-      <AgentHudPanel map={map} report={report} warnings={warnings} updatedAt={updatedAt} />
+      <AgentHudPanel
+        map={map}
+        report={report}
+        warnings={warnings}
+        updatedAt={updatedAt}
+        envReport={envReport}
+        history={history}
+      />
     </>
   )
 }

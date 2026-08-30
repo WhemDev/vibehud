@@ -39,11 +39,27 @@ export interface Task {
   page?: string
 }
 
+export interface SystemNode {
+  id: string
+  label: string
+  /** e.g. db, auth, storage, payments — free text, shown as a chip */
+  kind?: string
+  status: Status
+  note?: string
+}
+
+export interface EnvVar {
+  name: string
+  note?: string
+}
+
 export interface AgentMap {
   version: number
   app?: string
   pages: PageNode[]
   apis: ApiRoute[]
+  systems: SystemNode[]
+  env: EnvVar[]
   relations: Relation[]
   tasks: Task[]
 }
@@ -56,7 +72,7 @@ export interface NormalizeResult {
 const STATUSES: Status[] = ['todo', 'doing', 'done']
 const RELATION_TYPES: RelationType[] = ['nav', 'data', 'auth', 'other']
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
-const KNOWN_KEYS = new Set(['version', 'app', 'pages', 'apis', 'relations', 'tasks'])
+const KNOWN_KEYS = new Set(['version', 'app', 'pages', 'apis', 'systems', 'env', 'relations', 'tasks'])
 
 function asString(v: unknown): string | undefined {
   if (typeof v === 'string' && v.trim() !== '') return v.trim()
@@ -70,7 +86,15 @@ function asString(v: unknown): string | undefined {
  */
 export function normalizeMap(raw: unknown): NormalizeResult {
   const warnings: string[] = []
-  const map: AgentMap = { version: 1, pages: [], apis: [], relations: [], tasks: [] }
+  const map: AgentMap = {
+    version: 1,
+    pages: [],
+    apis: [],
+    systems: [],
+    env: [],
+    relations: [],
+    tasks: [],
+  }
 
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     warnings.push('agent-map block is not a YAML mapping; using an empty map')
@@ -159,6 +183,51 @@ export function normalizeMap(raw: unknown): NormalizeResult {
       else warnings.push(`relations[${i}] has unknown type "${rawType}"; using "nav"`)
     }
     map.relations.push({ from, to, type })
+  }
+
+  const seenSystemIds = new Set<string>()
+  for (const [i, entry] of toArray(obj.systems, 'systems', warnings).entries()) {
+    const e = asObject(entry)
+    const id = e && asString(e.id)
+    if (!id) {
+      warnings.push(`systems[${i}] needs an "id"; dropped`)
+      continue
+    }
+    if (seenSystemIds.has(id) || seenApiIds.has(id) || seenPageIds.has(id)) {
+      warnings.push(`systems[${i}] duplicates id "${id}"; dropped`)
+      continue
+    }
+    seenSystemIds.add(id)
+    const system: SystemNode = {
+      id,
+      label: asString(e.label) ?? id,
+      status: normalizeStatus(e.status, 'done', `systems[${i}]`, warnings),
+    }
+    const kind = asString(e.kind)
+    if (kind) system.kind = kind
+    const note = asString(e.note)
+    if (note) system.note = note
+    map.systems.push(system)
+  }
+
+  const seenEnvNames = new Set<string>()
+  for (const [i, entry] of toArray(obj.env, 'env', warnings).entries()) {
+    const asStr = asString(entry)
+    const e = asObject(entry)
+    const name = asStr ?? (e && asString(e.name))
+    if (!name) {
+      warnings.push(`env[${i}] needs a "name"; dropped`)
+      continue
+    }
+    if (seenEnvNames.has(name)) {
+      warnings.push(`env[${i}] duplicates "${name}"; dropped`)
+      continue
+    }
+    seenEnvNames.add(name)
+    const envVar: EnvVar = { name }
+    const note = e ? asString(e.note) : undefined
+    if (note) envVar.note = note
+    map.env.push(envVar)
   }
 
   const seenTaskIds = new Set<string>()

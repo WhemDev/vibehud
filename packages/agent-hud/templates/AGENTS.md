@@ -13,8 +13,11 @@ Update the file **in the same turn** as the change it describes, whenever you:
    methods).
 3. Add or change a page's major building blocks (a form, a grid, a chart) →
    update that page's `elements`.
-4. Start, finish, or plan a piece of work → update `tasks` (todo/doing/done).
-5. Are asked about progress → update the file first, then point the user to
+4. Integrate an external service or database → update `systems`.
+5. Start reading a new environment variable → add its NAME to `env` (never a
+   value) and to `.env.example`.
+6. Start, finish, or plan a piece of work → update `tasks` (todo/doing/done).
+7. Are asked about progress → update the file first, then point the user to
    `/agent-hud`.
 
 If the panel shows "map drift" (missing or undeclared routes), fixing
@@ -73,8 +76,13 @@ Field rules:
 - `apis[]`: `id` and `path` required; `methods` (default `[GET]`) should match
   the handler's exports; declared paths are validated against real `route.ts`
   handlers, so keep them truthful.
-- `relations[]`: `from`/`to` are page or api ids; `type` is `nav` | `data` |
-  `auth` | `other` (default `nav`).
+- `systems[]`: external services and databases (`id` required, optional `kind`,
+  `status`, `note`). Declaration-only — no filesystem check.
+- `env[]`: names of environment variables the app needs — either a bare string
+  or `{ name, note }`. NEVER put values here; the HUD checks names against
+  `.env.example` and whether each is set.
+- `relations[]`: `from`/`to` are page, api, or system ids; `type` is `nav` |
+  `data` | `auth` | `other` (default `nav`).
 - `tasks[]`: `id` and `title` required; `status` required
   (`todo` | `doing` | `done`); optional `page` links a task to a page id.
 - Do not invent other keys; they are ignored with a warning.

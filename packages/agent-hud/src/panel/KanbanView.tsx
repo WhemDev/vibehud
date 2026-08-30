@@ -13,11 +13,18 @@ const COLUMNS: { key: Status; title: string }[] = [
 export function KanbanView({
   map,
   onSelect,
+  query = '',
 }: {
   map: AgentMap
   onSelect?: (s: Selection) => void
+  query?: string
 }) {
   const pageLabel = new Map(map.pages.map((p) => [p.id, p.label]))
+  const q = query.trim().toLowerCase()
+  const visible = (t: { title: string; page?: string }) =>
+    q === '' ||
+    t.title.toLowerCase().includes(q) ||
+    (t.page ? (pageLabel.get(t.page) ?? t.page).toLowerCase().includes(q) : false)
 
   if (map.tasks.length === 0) {
     return <p style={{ fontSize: 14, color: theme.muted }}>No tasks declared yet.</p>
@@ -26,7 +33,7 @@ export function KanbanView({
   return (
     <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
       {COLUMNS.map((col) => {
-        const tasks = map.tasks.filter((t) => t.status === col.key)
+        const tasks = map.tasks.filter((t) => t.status === col.key && visible(t))
         return (
           <div
             key={col.key}

@@ -4,8 +4,9 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { AgentMap } from '../schema'
 import { normalizeRoute, type ValidationReport } from '../validate'
 import { statusColor, theme } from './theme'
+import type { ApiHealth } from './useApiHealth'
 
-export type Selection = { kind: 'page' | 'api' | 'task'; id: string } | null
+export type Selection = { kind: 'page' | 'api' | 'task' | 'system'; id: string } | null
 
 const drawer: CSSProperties = {
   position: 'fixed',
@@ -99,23 +100,35 @@ export function DetailDrawer({
   selection,
   onSelect,
   onClose,
+  health,
 }: {
   map: AgentMap
   report?: ValidationReport
   selection: Exclude<Selection, null>
   onSelect: (s: Selection) => void
   onClose: () => void
+  health?: Record<string, ApiHealth>
 }) {
   const page = selection.kind === 'page' ? map.pages.find((p) => p.id === selection.id) : undefined
   const api = selection.kind === 'api' ? map.apis.find((a) => a.id === selection.id) : undefined
   const task = selection.kind === 'task' ? map.tasks.find((t) => t.id === selection.id) : undefined
-  const entity = page ?? api ?? task
+  const system =
+    selection.kind === 'system' ? map.systems.find((s) => s.id === selection.id) : undefined
+  const entity = page ?? api ?? task ?? system
   if (!entity) return null
 
   const labelOf = (id: string) =>
-    map.pages.find((p) => p.id === id)?.label ?? map.apis.find((a) => a.id === id)?.label ?? id
-  const kindOf = (id: string): 'page' | 'api' =>
-    map.apis.some((a) => a.id === id) ? 'api' : 'page'
+    map.pages.find((p) => p.id === id)?.label ??
+    map.apis.find((a) => a.id === id)?.label ??
+    map.systems.find((s) => s.id === id)?.label ??
+    id
+  const kindOf = (id: string): 'page' | 'api' | 'system' =>
+    map.apis.some((a) => a.id === id)
+      ? 'api'
+      : map.systems.some((s) => s.id === id)
+        ? 'system'
+        : 'page'
+  const apiHealth = api ? health?.[api.id] : undefined
 
   const relationsOut = map.relations.filter((r) => r.from === selection.id)
   const relationsIn = map.relations.filter((r) => r.to === selection.id)
@@ -151,7 +164,7 @@ export function DetailDrawer({
         </button>
       </div>
 
-      <h2 style={h2}>{page?.label ?? api?.label ?? 'Task'}</h2>
+      <h2 style={h2}>{page?.label ?? api?.label ?? system?.label ?? 'Task'}</h2>
       {task && <div style={{ fontSize: 14, fontWeight: 600 }}>{task.title}</div>}
       <div style={{ marginTop: 6 }}>
         {path && <span style={mono}>{path}</span>}
@@ -184,6 +197,36 @@ export function DetailDrawer({
               </span>
             ))}
           </div>
+          {apiHealth && apiHealth !== 'unknown' && (
+            <>
+              <div style={secTitle}>Health</div>
+              <div style={{ fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    background:
+                      apiHealth === 'up' ? theme.ok : apiHealth === 'down' ? theme.muted : theme.danger,
+                    border: `1.5px solid ${theme.line}`,
+                  }}
+                />
+                {apiHealth === 'up'
+                  ? 'responding'
+                  : apiHealth === 'error'
+                    ? 'responding with 5xx errors'
+                    : apiHealth === 'missing'
+                      ? 'returns 404'
+                      : 'not reachable'}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {system?.kind && (
+        <>
+          <div style={secTitle}>Kind</div>
+          <span style={{ ...mono, ...kindChip }}>{system.kind}</span>
         </>
       )}
 
@@ -254,10 +297,12 @@ export function DetailDrawer({
         </>
       )}
 
-      {(page?.note ?? api?.note) && (
+      {(page?.note ?? api?.note ?? system?.note) && (
         <>
           <div style={secTitle}>Note</div>
-          <p style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>{page?.note ?? api?.note}</p>
+          <p style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+            {page?.note ?? api?.note ?? system?.note}
+          </p>
         </>
       )}
     </aside>

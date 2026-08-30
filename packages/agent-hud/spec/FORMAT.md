@@ -35,9 +35,21 @@ apis:                     # optional — the app's API route handlers
     status: done          # todo | doing | done (default done)
     note: "free text"     # optional
 
-relations:                # optional edges between pages and/or apis
-  - from: home            # page or api id
-    to: blog              # page or api id
+systems:                  # optional — external services, declaration-only
+  - id: stripe            # required, unique (shared id space)
+    label: Stripe         # optional, defaults to id
+    kind: payments        # optional free text (db, auth, storage, ...)
+    status: doing         # todo | doing | done (default done)
+    note: "free text"     # optional
+
+env:                      # optional — env var NAMES the app needs (never values)
+  - DATABASE_URL          # string shorthand, or:
+  - name: STRIPE_SECRET_KEY
+    note: "test-mode key" # optional
+
+relations:                # optional edges between pages, apis, and systems
+  - from: home            # any declared id
+    to: blog
     type: nav             # nav | data | auth | other (default nav)
 
 tasks:                    # optional work items, rendered as a kanban
@@ -57,6 +69,11 @@ tasks:                    # optional work items, rendered as a kanban
   are surfaced in the UI. This is the contract that keeps the map honest.
 - `elements` are declarative (not verified against code): use them to show
   what a page is made of in the detail panel.
+- `env` names are checked against `.env.example` and against which variables
+  are actually set in the running process. Only names travel — values never
+  appear anywhere.
+- `systems` are declaration-only (no filesystem validation); the renderer may
+  ping declared `apis` for liveness in dev.
 - Dynamic route segments are written and matched literally (`[slug]`,
   `[...parts]`, `[[...opt]]`).
 - IDs are stable handles for relations and tasks; renaming a page's `id` means

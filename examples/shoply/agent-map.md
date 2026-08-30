@@ -85,6 +85,23 @@ apis:
     methods: [GET, POST]
     status: todo
 
+systems:
+  - id: stripe
+    label: Stripe
+    kind: payments
+    status: doing
+    note: "Test mode only until the domain is verified."
+  - id: db
+    label: Postgres
+    kind: database
+    status: done
+
+env:
+  - name: DATABASE_URL
+  - name: STRIPE_SECRET_KEY
+    note: "Stripe test-mode secret"
+  - name: NODE_ENV
+
 relations:
   - from: home
     to: products
@@ -106,6 +123,15 @@ relations:
     type: data
   - from: wishlist
     to: wishlist-api
+    type: data
+  - from: checkout-api
+    to: stripe
+    type: data
+  - from: products-api
+    to: db
+    type: data
+  - from: checkout-api
+    to: db
     type: data
 
 tasks:

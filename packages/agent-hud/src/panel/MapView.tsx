@@ -1,16 +1,26 @@
 'use client'
 
-import type { AgentMap, ApiRoute } from '../schema'
+import type { AgentMap } from '../schema'
 import { normalizeRoute, type ValidationReport } from '../validate'
 import type { Selection } from './DetailDrawer'
 import { statusColor, theme } from './theme'
+import type { ApiHealth } from './useApiHealth'
 
 const NODE_W = 150
 const NODE_H = 52
-const API_H = 44
+const BAND_H = 44
 const COL_GAP = 220
 const ROW_GAP = 80
 const PAD = 28
+const DIM = 0.22
+
+const HEALTH_COLOR: Record<ApiHealth, string> = {
+  up: theme.ok,
+  error: theme.danger,
+  missing: theme.danger,
+  down: theme.muted,
+  unknown: theme.muted,
+}
 
 interface Positioned {
   id: string
@@ -68,16 +78,24 @@ export function MapView({
   report,
   selection,
   onSelect,
+  query = '',
+  health = {},
 }: {
   map: AgentMap
   report?: ValidationReport
   selection?: Selection
   onSelect?: (s: Selection) => void
+  query?: string
+  health?: Record<string, ApiHealth>
 }) {
   const { pos, bottom } = layoutPages(map)
   const apiY = bottom + 46
   map.apis.forEach((a, i) => {
-    pos.set(a.id, { id: a.id, x: PAD + i * (NODE_W + 44), y: apiY, w: NODE_W, h: API_H })
+    pos.set(a.id, { id: a.id, x: PAD + i * (NODE_W + 44), y: apiY, w: NODE_W, h: BAND_H })
+  })
+  const sysY = map.apis.length > 0 ? apiY + BAND_H + 46 : apiY
+  map.systems.forEach((s, i) => {
+    pos.set(s.id, { id: s.id, x: PAD + i * (NODE_W + 44), y: sysY, w: NODE_W, h: BAND_H })
   })
 
   const missing = new Set(report?.missing ?? [])
@@ -87,12 +105,48 @@ export function MapView({
   const width = Math.max(...all.map((n) => n.x + n.w), 300) + PAD + 4
   const height = Math.max(...all.map((n) => n.y + n.h), 120) + PAD + 4
 
-  if (map.pages.length === 0 && map.apis.length === 0) {
+  if (all.length === 0) {
     return <p style={{ fontSize: 14, color: theme.muted }}>Nothing declared yet.</p>
   }
 
+  // Focus set: the selected node plus its direct neighbors.
+  const focus = new Set<string>()
+  if (selection && selection.kind !== 'task' && pos.has(selection.id)) {
+    focus.add(selection.id)
+    for (const r of map.relations) {
+      if (r.from === selection.id) focus.add(r.to)
+      if (r.to === selection.id) focus.add(r.from)
+    }
+  }
+  const q = query.trim().toLowerCase()
+  const matches = (label: string, path?: string) =>
+    label.toLowerCase().includes(q) || (path ?? '').toLowerCase().includes(q)
+  const nodeOpacity = (id: string, label: string, path?: string) => {
+    if (q !== '') return matches(label, path) ? 1 : DIM
+    if (focus.size > 0) return focus.has(id) ? 1 : DIM
+    return 1
+  }
+  const opacityOf = new Map<string, number>()
+  for (const p of map.pages) opacityOf.set(p.id, nodeOpacity(p.id, p.label, p.path))
+  for (const a of map.apis) opacityOf.set(a.id, nodeOpacity(a.id, a.label, a.path))
+  for (const s of map.systems) opacityOf.set(s.id, nodeOpacity(s.id, s.label))
+
   const isSelected = (id: string) =>
     selection != null && selection.kind !== 'task' && selection.id === id
+
+  const bandLabel = (y: number, text: string) => (
+    <text
+      x={PAD}
+      y={y - 14}
+      fontSize={10}
+      fontWeight={800}
+      letterSpacing="0.1em"
+      fontFamily={theme.fontBody}
+      fill={theme.muted}
+    >
+      {text}
+    </text>
+  )
 
   return (
     <div
@@ -109,39 +163,27 @@ export function MapView({
             <path d="M0 0 L8 4 L0 8 z" fill={theme.line} />
           </marker>
         </defs>
-        {map.apis.length > 0 && (
-          <text
-            x={PAD}
-            y={apiY - 14}
-            fontSize={10}
-            fontWeight={800}
-            letterSpacing="0.1em"
-            fontFamily={theme.fontBody}
-            fill={theme.muted}
-          >
-            API ROUTES
-          </text>
-        )}
+        {map.apis.length > 0 && bandLabel(apiY, 'API ROUTES')}
+        {map.systems.length > 0 && bandLabel(sysY, 'SYSTEMS')}
         {map.relations.map((r, i) => {
           const a = pos.get(r.from)
           const b = pos.get(r.to)
           if (!a || !b) return null
-          const sameBand = Math.abs(a.y - b.y) < ROW_GAP && a.y < apiY === b.y < apiY
-          const x1 = a.x + a.w
-          const y1 = a.y + a.h / 2
-          const x2 = b.x
-          const y2 = b.y + b.h / 2
-          const vertical = b.y >= apiY !== a.y >= apiY
+          const vertical = Math.abs(b.y - a.y) > ROW_GAP
+          const edgeOpacity = Math.min(
+            opacityOf.get(r.from) ?? 1,
+            opacityOf.get(r.to) ?? 1,
+          )
           return (
             <line
               key={i}
-              x1={vertical ? a.x + a.w / 2 : x1}
-              y1={vertical ? a.y + a.h : y1}
-              x2={vertical ? b.x + b.w / 2 : x2}
-              y2={vertical ? b.y : y2}
+              x1={vertical ? a.x + a.w / 2 : a.x + a.w}
+              y1={vertical ? a.y + a.h : a.y + a.h / 2}
+              x2={vertical ? b.x + b.w / 2 : b.x}
+              y2={vertical ? b.y : b.y + b.h / 2}
               stroke={theme.line}
               strokeWidth={1.5}
-              strokeOpacity={sameBand || vertical ? 1 : 0.8}
+              opacity={edgeOpacity}
               strokeDasharray={r.type === 'nav' ? undefined : '4 3'}
               markerEnd="url(#hud-arrow)"
             />
@@ -154,6 +196,7 @@ export function MapView({
           return (
             <g
               key={page.id}
+              opacity={opacityOf.get(page.id)}
               onClick={() => onSelect?.({ kind: 'page', id: page.id })}
               style={{ cursor: onSelect ? 'pointer' : 'default' }}
             >
@@ -184,13 +227,15 @@ export function MapView({
             </g>
           )
         })}
-        {map.apis.map((api: ApiRoute) => {
+        {map.apis.map((api) => {
           const n = pos.get(api.id)!
           const isMissing = apiMissing.has(normalizeRoute(api.path))
           const sel = isSelected(api.id)
+          const h = health[api.id]
           return (
             <g
               key={api.id}
+              opacity={opacityOf.get(api.id)}
               onClick={() => onSelect?.({ kind: 'api', id: api.id })}
               style={{ cursor: onSelect ? 'pointer' : 'default' }}
             >
@@ -224,6 +269,61 @@ export function MapView({
               >
                 {isMissing ? `${api.path} · missing` : api.path}
               </text>
+              {h && h !== 'unknown' && !isMissing && (
+                <g>
+                  <rect
+                    x={n.x + n.w - 16}
+                    y={n.y + 8}
+                    width={9}
+                    height={9}
+                    fill={HEALTH_COLOR[h]}
+                    stroke={theme.card}
+                    strokeWidth={1.5}
+                  >
+                    <title>{`health: ${h}`}</title>
+                  </rect>
+                </g>
+              )}
+            </g>
+          )
+        })}
+        {map.systems.map((sys) => {
+          const n = pos.get(sys.id)!
+          const sel = isSelected(sys.id)
+          return (
+            <g
+              key={sys.id}
+              opacity={opacityOf.get(sys.id)}
+              onClick={() => onSelect?.({ kind: 'system', id: sys.id })}
+              style={{ cursor: onSelect ? 'pointer' : 'default' }}
+            >
+              <rect
+                x={n.x}
+                y={n.y}
+                width={n.w}
+                height={n.h}
+                fill={sel ? theme.warnBg : theme.well}
+                stroke={theme.line}
+                strokeWidth={sel ? 3 : theme.bw}
+              />
+              <rect
+                x={n.x + 4}
+                y={n.y + 4}
+                width={n.w - 8}
+                height={n.h - 8}
+                fill="none"
+                stroke={theme.line}
+                strokeWidth={1}
+              />
+              <circle cx={n.x + 16} cy={n.y + BAND_H / 2} r={4.5} fill={statusColor[sys.status]} />
+              <text x={n.x + 28} y={n.y + 19} fontSize={12} fontWeight={700} fontFamily={theme.fontBody} fill={theme.ink}>
+                {sys.label}
+              </text>
+              {sys.kind && (
+                <text x={n.x + 28} y={n.y + 33} fontSize={9} fontFamily={theme.fontMono} fill={theme.muted}>
+                  {sys.kind}
+                </text>
+              )}
             </g>
           )
         })}
