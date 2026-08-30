@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "A drop-in HUD for AI-agent state: your agent maintains agent-map.md, agent-hud renders it as a live map + kanban and validates it against your real routes.",
   "license": "MIT",
+  "homepage": "https://agent-hud-five.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WhemDev/agent-hud.git",
+    "directory": "packages/agent-hud"
+  },
+  "bugs": "https://github.com/WhemDev/agent-hud/issues",
   "keywords": [
     "ai",
     "agent",
@@ -20,7 +27,8 @@
     "src",
     "templates",
     "spec",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "test": "vitest run"
