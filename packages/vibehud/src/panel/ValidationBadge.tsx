@@ -24,6 +24,12 @@ function fixPrompt(report: ValidationReport): string {
     lines.push(
       `- API handlers on disk not declared in the map: ${report.apiUndeclared.join(', ')} — add them to "apis".`,
     )
+  for (const m of report.methodMismatches)
+    lines.push(
+      `- ${m.path} declares methods [${m.declared.join(', ')}] but the handler exports [${m.found.join(', ')}] — align the map's "methods".`,
+    )
+  if (report.dangling.length > 0)
+    lines.push(`- Fix dangling references: ${report.dangling.join('; ')}.`)
   lines.push('Afterwards, keep agent-map.md updated in the same turn as any route or task change.')
   return lines.join('\n')
 }
@@ -90,6 +96,14 @@ export function ValidationBadge({ report }: { report: ValidationReport }) {
             {report.undeclared.length > 0 && <div>pages not declared: {report.undeclared.join(', ')}</div>}
             {report.apiMissing.length > 0 && <div>APIs missing on disk: {report.apiMissing.join(', ')}</div>}
             {report.apiUndeclared.length > 0 && <div>APIs not declared: {report.apiUndeclared.join(', ')}</div>}
+            {report.methodMismatches.map((m) => (
+              <div key={m.path}>
+                method drift: {m.path} declares [{m.declared.join(', ')}] · exports [{m.found.join(', ')}]
+              </div>
+            ))}
+            {report.dangling.map((d, i) => (
+              <div key={i}>dangling: {d}</div>
+            ))}
           </div>
         )}
       </div>

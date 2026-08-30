@@ -34,6 +34,16 @@ Then create `agent-map.md` at the repo root — format in
 [templates/AGENTS.md](templates/AGENTS.md) into your project so the agent keeps
 the map updated every session.
 
+## CLI
+
+```bash
+npx vibehud check          # exit 0 clean, exit 1 on drift
+npx vibehud check --json   # machine-readable, for agents and CI
+```
+
+Validates pages, API routes **and their methods**, and referential integrity
+(dangling relation/task ids) — the same checks as the panel badge, headless.
+
 ## API
 
 ```ts

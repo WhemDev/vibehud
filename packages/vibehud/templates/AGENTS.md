@@ -23,6 +23,16 @@ Update the file **in the same turn** as the change it describes, whenever you:
 If the panel shows "map drift" (missing or undeclared routes), fixing
 `agent-map.md` is part of finishing your task.
 
+**Verify with the CLI** — after updating the map, run:
+
+```bash
+npx vibehud check
+```
+
+Exit 0 means the map matches reality; exit 1 prints exactly what drifted
+(`--json` for machine-readable output). Treat a failing check like a failing
+test. Do NOT declare the `/vibehud` route itself — validation ignores it.
+
 ## File format
 
 `agent-map.md` is markdown; the machine-readable part is one fenced block

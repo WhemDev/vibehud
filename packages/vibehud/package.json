@@ -1,6 +1,6 @@
 {
   "name": "vibehud",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A drop-in HUD for AI-agent state: your agent maintains agent-map.md, vibehud renders it as a live map + kanban and validates it against your real routes.",
   "license": "MIT",
   "homepage": "https://vibehud-one.vercel.app",
@@ -18,6 +18,9 @@
     "visualization",
     "agent-map"
   ],
+  "bin": {
+    "vibehud": "dist/cli.cjs"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./next": "./src/next.tsx",
@@ -25,12 +28,15 @@
   },
   "files": [
     "src",
+    "dist",
     "templates",
     "spec",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs",
+    "prepublishOnly": "npm run build && vitest run",
     "test": "vitest run"
   },
   "dependencies": {
@@ -50,6 +56,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
+    "esbuild": "^0.28.2",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
   }

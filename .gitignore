@@ -3,3 +3,4 @@ node_modules/
 next-env.d.ts
 demo/out/
 .vercel/
+packages/*/dist/

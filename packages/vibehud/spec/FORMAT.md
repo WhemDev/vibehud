@@ -77,10 +77,16 @@ tasks:                    # optional work items, rendered as a kanban
 - Dynamic route segments are written and matched literally (`[slug]`,
   `[...parts]`, `[[...opt]]`).
 - IDs are stable handles for relations and tasks; renaming a page's `id` means
-  updating every reference to it.
+  updating every reference to it. The validator reports dangling references.
+- Do NOT declare the HUD's own route (`/vibehud`): validation ignores it on
+  both sides, so declaring it is unnecessary (though harmless).
+- `apis[].methods` are validated against the handler's actual exports — a
+  declared `[GET]` against a `GET, POST` handler is reported as method drift.
+- `npx vibehud check` runs the same validation headlessly (exit 1 on drift,
+  `--json` for machines) — use it in the agent's verify step, pre-commit, or CI.
 
 ## Design notes
 
 Inspired by [JSON Canvas](https://jsoncanvas.org/): a small open format any
-tool can render. v1 deliberately excludes a `systems` layer (databases,
-external APIs) — add pages and tasks only.
+tool can render. Every key above is part of the format; only `pages` is
+required.

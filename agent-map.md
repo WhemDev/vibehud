@@ -110,6 +110,12 @@ tasks:
   - id: dagre-layout
     title: "Replace BFS map layout with dagre (layered graph, multi-parent + cycles)"
     status: done
+  - id: dogfood-fixes
+    title: "Dogfood round 2: self-route fix, method drift, dangling-id lint, quiet pings, spec fix"
+    status: done
+  - id: cli
+    title: "npx vibehud check CLI (exit codes + --json)"
+    status: done
   - id: redemo
     title: "Re-record demo under the vibehud name (current mp4 is pre-rebrand)"
     status: todo

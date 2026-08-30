@@ -5,9 +5,12 @@ import { useEffect, useState } from 'react'
 export type ApiHealth = 'up' | 'error' | 'missing' | 'down' | 'unknown'
 
 /**
- * Pings each declared API route with HEAD every `intervalMs` and reports
- * liveness. 2xx–4xx (except 404) counts as up — a 405 just means no HEAD
- * export. Dynamic paths ([param]) can't be pinged and stay 'unknown'.
+ * Pings each declared API route with OPTIONS every `intervalMs` and reports
+ * liveness. OPTIONS is used deliberately: Next.js auto-answers it with 204
+ * for any existing route handler, so a healthy ping never shows up as a red
+ * 405/401 line in the devtools console — health should read as health, not
+ * failure. 2xx–4xx (except 404) counts as up; dynamic paths ([param]) can't
+ * be pinged and stay 'unknown'.
  */
 export function useApiHealth(
   paths: { id: string; path: string }[],
@@ -28,7 +31,7 @@ export function useApiHealth(
         targets.map(async ({ id, path }): Promise<[string, ApiHealth]> => {
           if (path.includes('[')) return [id, 'unknown']
           try {
-            const r = await fetch(path, { method: 'HEAD', cache: 'no-store' })
+            const r = await fetch(path, { method: 'OPTIONS', cache: 'no-store' })
             if (r.status >= 500) return [id, 'error']
             if (r.status === 404) return [id, 'missing']
             return [id, 'up']
