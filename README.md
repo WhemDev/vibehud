@@ -8,7 +8,7 @@ vibehud renders it as a live **map + kanban** at `/vibehud` and
 **validates** the declarations against your real Next.js routes — so the map
 cannot silently lie.
 
-🌐 **Site:** https://vibehud.vercel.app · 📦 **npm:** [`vibehud`](https://www.npmjs.com/package/vibehud)
+🌐 **Site:** https://vibehud-one.vercel.app · 📦 **npm:** [`vibehud`](https://www.npmjs.com/package/vibehud)
 
 ## Quick start
 
