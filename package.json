@@ -1,0 +1,11 @@
+{
+  "name": "agent-hud-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "test": "npm test -w agent-hud"
+  }
+}

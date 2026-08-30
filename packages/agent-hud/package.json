@@ -1,0 +1,41 @@
+{
+  "name": "agent-hud",
+  "version": "0.1.0",
+  "description": "A drop-in HUD for AI-agent state: your agent maintains agent-map.md, agent-hud renders it as a live map + kanban and validates it against your real routes.",
+  "license": "MIT",
+  "keywords": [
+    "ai",
+    "agent",
+    "nextjs",
+    "kanban",
+    "visualization",
+    "agent-map"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./next": "./src/next.tsx",
+    "./panel": "./src/panel/AgentHudPanel.tsx"
+  },
+  "files": [
+    "src",
+    "templates",
+    "spec",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}
