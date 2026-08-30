@@ -29,8 +29,14 @@
     "yaml": "^2.5.0"
   },
   "peerDependencies": {
+    "next": ">=14",
     "react": ">=18",
     "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

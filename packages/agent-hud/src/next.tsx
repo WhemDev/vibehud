@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { parseAgentMap } from './parser'
 import { AgentHudPanel } from './panel/AgentHudPanel'
+import { AutoRefresh } from './panel/AutoRefresh'
 import { scanNextAppRoutes } from './scanner'
 import { validateMap, type ValidationReport } from './validate'
 
@@ -14,6 +15,8 @@ export interface AgentHudPageOptions {
   appDir?: string
   /** Route the HUD itself is mounted on, excluded from validation. Default: /agent-hud */
   hudRoute?: string
+  /** Live-update poll interval in ms; 0 disables. Default: 2000. */
+  refreshMs?: number
 }
 
 function findRoot(start: string, file: string): string {
@@ -40,14 +43,25 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
   const file = options.file ?? 'agent-map.md'
   const root = options.root ?? findRoot(process.cwd(), file)
   const mapPath = join(root, file)
+  const refresh = <AutoRefresh ms={options.refreshMs ?? 2000} />
 
   if (!existsSync(mapPath)) {
-    return <AgentHudPanel error={`${file} not found at ${root}`} />
+    return (
+      <>
+        {refresh}
+        <AgentHudPanel error={`${file} not found at ${root}`} />
+      </>
+    )
   }
 
   const { map, warnings, error } = parseAgentMap(readFileSync(mapPath, 'utf8'))
   if (error || !map) {
-    return <AgentHudPanel error={error ?? 'could not parse the map'} />
+    return (
+      <>
+        {refresh}
+        <AgentHudPanel error={error ?? 'could not parse the map'} />
+      </>
+    )
   }
 
   const appDir =
@@ -63,5 +77,10 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
     warnings.push(`no Next.js app directory found at ${appDir}; validation skipped`)
   }
 
-  return <AgentHudPanel map={map} report={report} warnings={warnings} />
+  return (
+    <>
+      {refresh}
+      <AgentHudPanel map={map} report={report} warnings={warnings} />
+    </>
+  )
 }
