@@ -30,6 +30,10 @@
   body {
     margin: 0;
     background: var(--paper);
+    background-image:
+      linear-gradient(rgba(20, 18, 14, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 18, 14, 0.045) 1px, transparent 1px);
+    background-size: 28px 28px;
     color: var(--ink);
     font-family: var(--head);
     line-height: 1.5;
@@ -59,12 +63,14 @@
     display: flex; align-items: center; gap: 10px;
   }
   .wordmark .sq { width: 16px; height: 16px; background: var(--yellow); border: 3px solid var(--ink); }
-  .nav-links { display: flex; gap: 16px; margin-left: auto; }
+  .nav-links { display: flex; gap: 18px; margin-left: auto; }
   .nav-links a {
-    font-size: 12px; font-weight: 800; text-transform: uppercase;
-    letter-spacing: 0.08em; text-decoration: none; padding: 4px 2px;
-    border-bottom: 3px solid transparent;
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    letter-spacing: 0.02em; text-decoration: none; padding: 4px 2px;
+    border-bottom: 3px solid transparent; text-transform: lowercase;
   }
+  .nav-links a::before { content: '› '; color: var(--orange); }
+  .nav-links a::after { content: '/'; color: var(--muted); }
   .nav-links a:hover, .nav-links a:focus-visible { border-bottom-color: var(--yellow); outline: none; }
   @media (max-width: 720px) { .nav-links { display: none; } }
 
@@ -113,11 +119,70 @@
   .rise.d3 { animation-delay: .28s } .rise.d4 { animation-delay: .4s }
   @keyframes rise { to { opacity: 1; transform: none; } }
 
-  /* ---------- fake HUD (hero, looping) ---------- */
+  /* ---------- ready-to-copy agent prompt (hero) ---------- */
+  .promptcard {
+    background: var(--ink); color: var(--paper);
+    box-shadow: 8px 8px 0 var(--yellow), 8px 8px 0 2px var(--ink);
+    border: 2px solid var(--ink);
+    position: relative;
+  }
+  .prompt-head {
+    background: var(--yellow); color: var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 10px 14px;
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  .prompt-head b {
+    font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .prompt-head .mini {
+    font-family: var(--mono); font-size: 9.5px; color: var(--muted); margin-left: auto;
+  }
+  .promptcard pre {
+    margin: 0; padding: 16px 16px 10px;
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.7;
+    color: var(--paper); overflow-x: auto; white-space: pre;
+  }
+  .promptcard pre .n { color: var(--yellow); font-weight: 700; }
+  .promptcard pre .p { color: var(--mint); }
+  .promptcard pre .d { color: #9a9384; }
+  .promptcard .cursor {
+    display: inline-block; width: 7px; height: 13px; background: var(--mint);
+    vertical-align: -2px; animation: blink 1s steps(1) infinite;
+  }
+  .prompt-foot {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 16px 16px;
+  }
+  .prompt-foot .btn { background: var(--yellow); color: var(--ink); box-shadow: 3px 3px 0 var(--paper); }
+  .prompt-foot .btn:hover { box-shadow: 5px 5px 0 var(--paper); }
+  .prompt-foot .btn:active { box-shadow: 0 0 0 var(--paper); }
+  .prompt-foot .btn.copied { background: var(--mint); }
+  .prompt-foot .note { font-family: var(--mono); font-size: 10px; color: #9a9384; }
+  .prompt-badge {
+    position: absolute; top: -14px; right: -10px; transform: rotate(3deg);
+    background: var(--mint); border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 4px 8px; color: var(--ink);
+  }
+
+  /* rotating word cycler */
+  .cycler-line {
+    margin-top: 26px; font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .cycler-line .cy {
+    display: inline-block; min-width: 9ch; font-weight: 700; color: var(--ink);
+    background: var(--yellow); padding: 1px 6px; border: 2px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .cycler-line .cy.swap { animation: cyswap .3s ease; }
+  @keyframes cyswap { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+  /* ---------- fake HUD (looping demo, lives in card 02) ---------- */
   .hud {
     background: var(--paper);
-    border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
-    padding: 16px; position: relative;
+    border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    padding: 12px; position: relative;
   }
   .hud-bar { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
   .hud-bar .t { font-weight: 900; text-transform: uppercase; font-size: 15px; }
@@ -349,37 +414,40 @@
         tasks, env, systems. <b>agent-hud</b> renders that map as a live panel and
         <b>validates it against your real routes</b>, so the map can't silently lie.</p>
       <div class="hero-ctas rise d3">
-        <button class="btn" data-copy="npm install agent-hud">⧉ Copy install command</button>
+        <button class="btn copy-prompt">⧉ Copy the agent prompt</button>
         <a class="btn alt" href="#how">How it works ↓</a>
       </div>
+      <p class="cycler-line rise d4">› one file your agent keeps honest — <span class="cy" id="cycler">rendered</span></p>
     </div>
 
-    <div class="hud rise d4" id="hud" data-task="todo" aria-label="animated demo of the agent-hud panel">
-      <span class="hud-note">live · auto-refresh</span>
-      <div class="hud-bar">
-        <span class="t">Shoply</span><span class="f">agent-map.md</span><span class="fresh" id="fresh">updated 2s ago</span>
+    <div class="promptcard rise d4" id="agent-prompt" aria-label="ready-to-copy setup prompt for your agent">
+      <span class="prompt-badge">no install · just paste</span>
+      <div class="prompt-head">
+        <b>Paste this to your agent</b>
+        <span class="mini">cursor · claude code · lovable · bolt · replit</span>
       </div>
-      <div class="badge">
-        <span class="when-drift"><b>⚠ map drift</b>1 missing · pinged live</span>
-        <span class="when-ok"><b>✓ map verified</b>8 pages · 8 on disk</span>
+      <pre id="prompt-text">Set up agent-hud in this project, then keep it updated.
+
+<span class="n">1.</span> npm install agent-hud
+<span class="n">2.</span> Add transpilePackages: ['agent-hud'] to next.config.
+<span class="n">3.</span> Create <span class="p">app/agent-hud/page.tsx</span>:
+     import { AgentHudPage } from 'agent-hud/next'
+     export const dynamic = 'force-dynamic'
+     export default function Page() { return &lt;AgentHudPage /&gt; }
+<span class="n">4.</span> Create <span class="p">agent-map.md</span> at the repo root describing THIS
+   app — yaml block with pages, apis, systems, env NAMES
+   (never values), tasks.
+   <span class="d">Spec: node_modules/agent-hud/spec/FORMAT.md</span>
+<span class="n">5.</span> Copy <span class="p">node_modules/agent-hud/templates/AGENTS.md</span> into my
+   agent instructions (AGENTS.md / CLAUDE.md / .cursor/rules)
+   so every future session updates the map in the same turn
+   as any change.
+
+Then tell me to open <span class="p">/agent-hud</span>.<span class="cursor"></span></pre>
+      <div class="prompt-foot">
+        <button class="btn copy-prompt">⧉ Copy prompt</button>
+        <span class="note">your agent does the rest · panel is dev-only</span>
       </div>
-      <div class="lane-label">Pages</div>
-      <div class="noderow">
-        <div class="node"><span class="dot done"></span>Home<span class="path">/</span></div>
-        <div class="node"><span class="dot done"></span>Products<span class="path">/products</span></div>
-        <div class="node ghost" id="ghost"><span class="dot todo" id="ghostdot"></span>Wishlist<span class="path" id="ghostpath">/wishlist · missing</span></div>
-      </div>
-      <div class="lane-label">API routes</div>
-      <div class="noderow">
-        <div class="node api"><span class="health"></span>GET<span class="path">/api/products</span></div>
-        <div class="node api"><span class="health"></span>POST<span class="path">/api/checkout</span></div>
-      </div>
-      <div class="hud-cols">
-        <div class="hud-col" id="col-todo"><div class="ct">TO DO</div><div class="tcard">Build wishlist page</div></div>
-        <div class="hud-col" id="col-doing"><div class="ct">DOING</div><div class="tcard">Build wishlist page</div></div>
-        <div class="hud-col" id="col-done"><div class="ct">DONE</div><div class="tcard">Build wishlist page</div></div>
-      </div>
-      <div class="term"><span id="termline"></span><span class="cursor"></span></div>
     </div>
   </div>
 </header>
@@ -395,7 +463,7 @@
 
 <section id="what">
   <div class="wrap">
-    <span class="sec-label">What it is</span>
+    <span class="sec-label">What it is · declared, then verified</span>
     <h2>A render layer for agent state — with a lie detector.</h2>
     <p class="lede">Not a code visualizer. Not a diagram generator. Your agent <b>declares</b> what it's
       building in one markdown file; agent-hud draws it and <b>checks the declarations against the
@@ -412,15 +480,30 @@
         <h3><span class="n">02</span> The panel</h3>
         <p>A drop-in React page at <b>/agent-hud</b>, dev-only. Page map, API lane, systems,
            env chips, kanban — auto-refreshing every 2 seconds while the agent works.</p>
-        <div class="lane-label">Pages</div>
-        <div class="noderow">
-          <div class="node"><span class="dot done"></span>Home<span class="path">/</span></div>
-          <div class="node"><span class="dot doing"></span>Blog<span class="path">/blog</span></div>
-        </div>
-        <div class="lane-label">Systems</div>
-        <div class="noderow">
-          <div class="node"><span class="dot doing"></span>Stripe<span class="path">payments</span></div>
-          <div class="node"><span class="dot done"></span>Postgres<span class="path">database</span></div>
+        <div class="hud" id="hud" data-task="todo" aria-label="animated demo of the agent-hud panel">
+          <span class="hud-note">live · auto-refresh</span>
+          <div class="hud-bar">
+            <span class="t">Shoply</span><span class="f">agent-map.md</span><span class="fresh" id="fresh">updated 2s ago</span>
+          </div>
+          <div class="badge">
+            <span class="when-drift"><b>⚠ map drift</b>1 missing · pinged live</span>
+            <span class="when-ok"><b>✓ map verified</b>8 pages · 8 on disk</span>
+          </div>
+          <div class="lane-label">Pages</div>
+          <div class="noderow">
+            <div class="node"><span class="dot done"></span>Home<span class="path">/</span></div>
+            <div class="node ghost" id="ghost"><span class="dot todo" id="ghostdot"></span>Wishlist<span class="path" id="ghostpath">/wishlist · missing</span></div>
+          </div>
+          <div class="lane-label">API routes</div>
+          <div class="noderow">
+            <div class="node api"><span class="health"></span>GET<span class="path">/api/products</span></div>
+          </div>
+          <div class="hud-cols">
+            <div class="hud-col" id="col-todo"><div class="ct">TO DO</div><div class="tcard">Build wishlist page</div></div>
+            <div class="hud-col" id="col-doing"><div class="ct">DOING</div><div class="tcard">Build wishlist page</div></div>
+            <div class="hud-col" id="col-done"><div class="ct">DONE</div><div class="tcard">Build wishlist page</div></div>
+          </div>
+          <div class="term"><span id="termline"></span><span class="cursor"></span></div>
         </div>
       </div>
       <div class="card reveal">
@@ -438,10 +521,10 @@
 
 <section id="how">
   <div class="wrap">
-    <span class="sec-label">How to use it</span>
+    <span class="sec-label">How to use it · one prompt or four steps</span>
     <h2>You don't install it. Your agent does.</h2>
-    <p class="lede">Paste one instruction to your agent — on Cursor, Claude Code, Lovable, Bolt,
-      wherever — and it wires everything up. Or do it by hand in four steps:</p>
+    <p class="lede">The <a href="#agent-prompt"><b>prompt at the top</b></a> does all of this for you —
+      your agent wires everything up. Doing it by hand is four steps:</p>
 
     <div class="steps">
       <div class="step reveal">
@@ -506,7 +589,7 @@ Update agent-map.md <span class="k">in the same turn</span> as:
 
 <section id="features">
   <div class="wrap">
-    <span class="sec-label">Features</span>
+    <span class="sec-label">Features · one yaml block drives it all</span>
     <h2>Everything the panel watches for you.</h2>
     <p class="lede">All of it dev-only by default, all of it driven by one YAML block.</p>
     <div class="feat-grid">
@@ -536,14 +619,29 @@ Update agent-map.md <span class="k">in the same turn</span> as:
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 
   // ----- copy buttons -----
-  document.querySelectorAll('[data-copy]').forEach((btn) => {
+  function wireCopy(btn, getText, doneLabel) {
     const original = btn.textContent
     btn.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(btn.dataset.copy) } catch { return }
-      btn.classList.add('copied'); btn.textContent = '✓ copied'
-      setTimeout(() => { btn.classList.remove('copied'); btn.textContent = original }, 1500)
+      try { await navigator.clipboard.writeText(getText()) } catch { return }
+      btn.classList.add('copied'); btn.textContent = doneLabel
+      setTimeout(() => { btn.classList.remove('copied'); btn.textContent = original }, 1800)
     })
-  })
+  }
+  document.querySelectorAll('[data-copy]').forEach((btn) =>
+    wireCopy(btn, () => btn.dataset.copy, '✓ copied'))
+  const promptText = () => $('#prompt-text').textContent.trim()
+  document.querySelectorAll('.copy-prompt').forEach((btn) =>
+    wireCopy(btn, promptText, '✓ copied — go paste it'))
+
+  // ----- rotating word cycler -----
+  const cyWords = ['rendered', 'validated', 'pinged', 'remembered', 'shipped']
+  const cy = $('#cycler')
+  let cyI = 0
+  setInterval(() => {
+    cyI = (cyI + 1) % cyWords.length
+    cy.textContent = cyWords[cyI]
+    if (!reduced) { cy.classList.remove('swap'); void cy.offsetWidth; cy.classList.add('swap') }
+  }, 2000)
 
   // ----- marquee: duplicate track for seamless loop -----
   $('#mq').innerHTML += $('#mq').innerHTML
