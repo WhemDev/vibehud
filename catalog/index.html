@@ -59,6 +59,11 @@
     color: var(--pg-accent); letter-spacing: 0.05em;
   }
   .tile-name { font-size: 18px; font-weight: 700; margin: 4px 0 6px; }
+  .sel {
+    float: right; font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
+    text-transform: uppercase; background: #ffe14d; color: #14120e;
+    border: 2px solid #14120e; padding: 2px 8px; box-shadow: 2px 2px 0 #14120e;
+  }
   .tile-desc { font-size: 13px; line-height: 1.55; color: var(--pg-muted); margin: 0; }
 
   /* ---- shared demo structure, all values from per-style tokens ---- */
@@ -260,7 +265,7 @@
     { id: 'blueprint', name: 'Blueprint', desc: 'Drafting-table blue with grid paper and chalk-yellow warnings. Leans into the "map of the build" metaphor; technical but friendly.' },
     { id: 'midnight', name: 'Midnight', desc: 'Linear-style product dark: quiet slate surfaces, hairline borders, restrained color reserved for status. The safest "serious tool" look.' },
     { id: 'quiet', name: 'Quiet', desc: 'Notion-adjacent white minimalism. Nothing competes with the content; status colors are the only ink spent. Best for embedding in any app unnoticed.' },
-    { id: 'brutalist', name: 'Brutalist', desc: 'Hard black borders, offset shadows, flat process-yellow alerts. Loud, screenshot-friendly, very "indie dev tool of the week".' },
+    { id: 'brutalist', name: 'Brutalist', selected: true, desc: 'Hard black borders, offset shadows, flat process-yellow alerts. Loud, screenshot-friendly, very "indie dev tool of the week".' },
     { id: 'aurora', name: 'Aurora', desc: 'Frosted glass cards floating over violet-teal light. The most "vibe coding platform" of the set — matches Lovable/Bolt aesthetics.' },
     { id: 'journal', name: 'Journal', desc: 'Warm paper, serif headings, double-rule dividers. Frames the map as the project’s field notebook rather than a dashboard.' },
     { id: 'arcade', name: 'Arcade', desc: 'CRT purples, pixel type for headings, hard drop shadows. Pure fun; the demo video would be unmistakable in a feed.' },
@@ -305,7 +310,7 @@
   document.getElementById('grid').innerHTML = STYLES.map(s => `
     <section class="tile">
       <div class="tile-head">
-        <span class="tile-id">style: ${s.id}</span>
+        <span class="tile-id">style: ${s.id}</span>${s.selected ? '<span class="sel">&#10003; chosen for production</span>' : ''}
         <div class="tile-name">${s.name}</div>
         <p class="tile-desc">${s.desc}</p>
       </div>

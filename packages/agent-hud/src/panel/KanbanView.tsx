@@ -1,6 +1,7 @@
 'use client'
 
 import type { AgentMap, Status } from '../schema'
+import { theme } from './theme'
 
 const COLUMNS: { key: Status; title: string }[] = [
   { key: 'todo', title: 'To do' },
@@ -12,11 +13,11 @@ export function KanbanView({ map }: { map: AgentMap }) {
   const pageLabel = new Map(map.pages.map((p) => [p.id, p.label]))
 
   if (map.tasks.length === 0) {
-    return <p style={{ fontSize: 14, color: '#888' }}>No tasks declared yet.</p>
+    return <p style={{ fontSize: 14, color: theme.muted }}>No tasks declared yet.</p>
   }
 
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
       {COLUMNS.map((col) => {
         const tasks = map.tasks.filter((t) => t.status === col.key)
         return (
@@ -24,25 +25,35 @@ export function KanbanView({ map }: { map: AgentMap }) {
             key={col.key}
             style={{
               flex: 1,
-              minWidth: 180,
-              background: '#f1f1f1',
-              borderRadius: 8,
+              minWidth: 190,
+              background: theme.well,
+              border: `${theme.bw}px solid ${theme.line}`,
               padding: 10,
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#777', margin: '2px 4px 10px' }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: theme.muted,
+                margin: '2px 4px 10px',
+              }}
+            >
               {col.title} · {tasks.length}
             </div>
             {tasks.map((t) => (
               <div
                 key={t.id}
                 style={{
-                  background: '#fff',
-                  border: '1px solid #e2e2e2',
-                  borderRadius: 6,
+                  background: theme.card,
+                  border: `${theme.bw}px solid ${theme.line}`,
+                  boxShadow: theme.shadowSmall,
                   padding: '8px 10px',
-                  marginBottom: 8,
+                  marginBottom: 10,
                   fontSize: 13,
+                  fontWeight: 500,
                 }}
               >
                 {t.title}
@@ -51,11 +62,11 @@ export function KanbanView({ map }: { map: AgentMap }) {
                     style={{
                       display: 'inline-block',
                       marginLeft: 8,
-                      fontSize: 11,
-                      color: '#666',
-                      background: '#eee',
-                      borderRadius: 4,
-                      padding: '1px 6px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: theme.tagInk,
+                      background: theme.tagBg,
+                      padding: '1px 7px',
                     }}
                   >
                     {pageLabel.get(t.page) ?? t.page}

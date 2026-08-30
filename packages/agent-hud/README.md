@@ -51,5 +51,6 @@ Dev-only by default: the page renders nothing in production unless
 
 ## Status
 
-v1 / weekend build. Next.js app directory only. The default panel styling is
-intentionally plain; a themed UI is coming.
+v1 / weekend build. Next.js app directory only. The panel ships with a
+brutalist theme (hard borders, offset shadows, process-yellow alerts); tokens
+live in `src/panel/theme.ts`.
