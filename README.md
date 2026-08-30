@@ -26,10 +26,15 @@ Manual setup, the format spec, and the agent instruction template live in
 
 ## What the panel shows
 
-- **Drift badge** — declared pages/APIs vs. what actually exists on disk, with
-  a one-click "copy fix prompt" to hand the reconciliation back to your agent
-  systems band; click any node for a detail drawer (elements, connections,
-  tasks, notes)
+- **Drift badge** — declared pages/APIs (and their methods) vs. what actually
+  exists on disk, plus dangling-reference lint, with a one-click "copy fix
+  prompt" to hand the reconciliation back to your agent
+- **Map** — a pan/zoom canvas (dagre layout): pages, API routes with methods,
+  systems; drag the ground, scroll to zoom, click any node for a detail
+  drawer (elements, connections, tasks, notes)
+- **Backend flows** — declared pipelines (webhooks, jobs, emails) whose steps
+  have no route of their own, rendered as step chains with integrity-checked
+  links into the map
 - **Live health** — each declared API pinged in dev (responding / 5xx / 404)
 - **Env check** — declared env NAMES vs. `.env.example` vs. what's set
   (values never appear anywhere)
