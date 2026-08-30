@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-hud — your agent says it built it. This proves it.</title>
+<meta name="description" content="agent-hud is an open source render layer for AI-agent state: your coding agent maintains agent-map.md, agent-hud renders it as a live map + kanban and validates it against your real Next.js routes.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='8' y='8' width='84' height='84' fill='%23ffe14d' stroke='%2314120e' stroke-width='8'/><rect x='30' y='30' width='40' height='40' fill='%2314120e'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    --paper: #f2efe6;
+    --well: #e9e4d4;
+    --card: #ffffff;
+    --ink: #14120e;
+    --muted: #55503f;
+    --yellow: #ffe14d;
+    --mint: #a7f3c0;
+    --red: #e23c2e;
+    --orange: #e8952f;
+    --green: #16a34a;
+    --shadow: 4px 4px 0 var(--ink);
+    --shadow-sm: 3px 3px 0 var(--ink);
+    --head: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--head);
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--yellow); }
+
+  a { color: inherit; }
+  button { font-family: inherit; }
+  code, pre, .mono { font-family: var(--mono); }
+
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 40;
+    background: var(--paper);
+    border-bottom: 2px solid var(--ink);
+  }
+  .nav-in {
+    display: flex; align-items: center; gap: 18px;
+    padding: 14px 24px; max-width: 1140px; margin: 0 auto;
+  }
+  .wordmark {
+    font-weight: 900; font-size: 18px; letter-spacing: 0.02em;
+    text-transform: uppercase; text-decoration: none;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .wordmark .sq { width: 16px; height: 16px; background: var(--yellow); border: 3px solid var(--ink); }
+  .nav-links { display: flex; gap: 16px; margin-left: auto; }
+  .nav-links a {
+    font-size: 12px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.08em; text-decoration: none; padding: 4px 2px;
+    border-bottom: 3px solid transparent;
+  }
+  .nav-links a:hover, .nav-links a:focus-visible { border-bottom-color: var(--yellow); outline: none; }
+  @media (max-width: 720px) { .nav-links { display: none; } }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 2px solid var(--ink); background: var(--ink); color: var(--yellow);
+    box-shadow: var(--shadow-sm);
+    font-weight: 800; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 10px 16px; cursor: pointer; text-decoration: none;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn.alt { background: var(--card); color: var(--ink); }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+  .btn:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+  .btn.copied { background: var(--mint); color: var(--ink); }
+  .nav-cta { margin-left: 12px; }
+  @media (max-width: 720px) { .nav-cta { margin-left: auto; } }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 72px 0 40px; position: relative; }
+  .hero-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+    gap: 48px; align-items: center;
+  }
+  @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; } }
+
+  .kicker {
+    display: inline-block; background: var(--ink); color: var(--yellow);
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 4px 10px; margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(38px, 6vw, 68px);
+    font-weight: 900; text-transform: uppercase; line-height: 0.98;
+    letter-spacing: -0.01em; margin: 0 0 20px; text-wrap: balance;
+  }
+  h1 .flip { display: inline-block; background: var(--yellow); padding: 0 10px; box-shadow: var(--shadow-sm); }
+  .hero p.sub { font-size: 17px; max-width: 46ch; color: var(--muted); margin: 0 0 28px; }
+  .hero p.sub b { color: var(--ink); }
+  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  /* entrance animations */
+  .rise { opacity: 0; transform: translateY(22px); animation: rise .6s cubic-bezier(.2,.9,.3,1) forwards; }
+  .rise.d1 { animation-delay: .08s } .rise.d2 { animation-delay: .18s }
+  .rise.d3 { animation-delay: .28s } .rise.d4 { animation-delay: .4s }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* ---------- fake HUD (hero, looping) ---------- */
+  .hud {
+    background: var(--paper);
+    border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+    padding: 16px; position: relative;
+  }
+  .hud-bar { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .hud-bar .t { font-weight: 900; text-transform: uppercase; font-size: 15px; }
+  .hud-bar .f { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+  .hud-bar .fresh { margin-left: auto; font-size: 10px; font-family: var(--mono); color: var(--muted); }
+
+  .badge {
+    display: inline-block; border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    background: var(--yellow); font-size: 11.5px; padding: 7px 10px; margin-bottom: 14px;
+    transition: background .2s;
+  }
+  .badge b { text-transform: uppercase; letter-spacing: 0.04em; margin-right: 6px; }
+  .hud.verified .badge { background: var(--mint); animation: stamp .35s cubic-bezier(.2,1.6,.4,1); }
+  .badge .when-drift { display: inline; } .badge .when-ok { display: none; }
+  .hud.verified .badge .when-drift { display: none; }
+  .hud.verified .badge .when-ok { display: inline; }
+  @keyframes stamp { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+  .lane-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.12em; color: var(--muted);
+    text-transform: uppercase; margin: 10px 0 6px;
+  }
+  .noderow { display: flex; gap: 10px; flex-wrap: wrap; }
+  .node {
+    background: var(--card); border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    padding: 6px 10px; font-size: 11.5px; font-weight: 700; min-width: 96px;
+    transition: transform .12s;
+  }
+  .node:hover { transform: translate(-1px,-1px); }
+  .node .path { display: block; font-family: var(--mono); font-size: 9px; font-weight: 400; color: var(--muted); }
+  .node .dot { display: inline-block; width: 8px; height: 8px; border-radius: 99px; margin-right: 6px; }
+  .dot.done { background: var(--green); } .dot.doing { background: var(--orange); } .dot.todo { background: #8a8471; }
+  .node.ghost {
+    border-style: dashed; border-color: var(--red); box-shadow: none; color: var(--red);
+  }
+  .node.ghost .path { color: var(--red); }
+  .hud.built .node.ghost {
+    border-style: solid; border-color: var(--ink); color: var(--ink); box-shadow: var(--shadow-sm);
+    animation: stamp .3s cubic-bezier(.2,1.6,.4,1);
+  }
+  .hud.built .node.ghost .path { color: var(--muted); }
+  .node.api { background: var(--ink); color: var(--yellow); }
+  .node.api .path { color: #cfc9b8; }
+  .node.api .health {
+    float: right; width: 8px; height: 8px; background: var(--green);
+    border: 1.5px solid var(--card); margin-top: 3px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .hud-cols { display: flex; gap: 8px; margin-top: 12px; }
+  .hud-col { flex: 1; background: var(--well); border: 2px solid var(--ink); padding: 6px; min-height: 58px; }
+  .hud-col .ct { font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--muted); margin: 0 2px 6px; }
+  .tcard {
+    background: var(--card); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);
+    font-size: 10px; font-weight: 600; padding: 5px 7px;
+    transition: opacity .25s, transform .25s;
+  }
+  .hud-col .tcard { display: none; }
+  .hud[data-task="todo"]  #col-todo .tcard,
+  .hud[data-task="doing"] #col-doing .tcard,
+  .hud[data-task="done"]  #col-done .tcard { display: block; animation: stamp .25s; }
+
+  .term {
+    margin-top: 12px; background: var(--ink); color: var(--mint);
+    font-family: var(--mono); font-size: 10.5px; padding: 8px 10px; min-height: 34px;
+    border: 2px solid var(--ink);
+  }
+  .term .cursor { display: inline-block; width: 7px; height: 12px; background: var(--mint);
+    vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .hud-note {
+    position: absolute; top: -14px; right: -10px; transform: rotate(3deg);
+    background: var(--yellow); border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 4px 8px;
+  }
+
+  /* ---------- marquee ---------- */
+  .marquee {
+    border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+    background: var(--ink); color: var(--paper); overflow: hidden; white-space: nowrap;
+    padding: 10px 0; margin-top: 56px;
+  }
+  .marquee-track { display: inline-block; animation: scroll 26s linear infinite; }
+  .marquee span {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
+    text-transform: uppercase; margin: 0 22px;
+  }
+  .marquee .y { color: var(--yellow); } .marquee .m { color: var(--mint); } .marquee .r { color: #ff8f81; }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+
+  /* ---------- sections ---------- */
+  section { padding: 84px 0 20px; }
+  .sec-label {
+    display: inline-block; background: var(--ink); color: var(--yellow);
+    font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 4px 12px; margin-bottom: 14px;
+  }
+  h2 {
+    font-size: clamp(26px, 3.6vw, 40px); font-weight: 900; text-transform: uppercase;
+    line-height: 1.02; margin: 0 0 14px; text-wrap: balance;
+  }
+  .lede { color: var(--muted); font-size: 16px; max-width: 60ch; margin: 0 0 36px; }
+  .lede b { color: var(--ink); }
+
+  /* scroll-stamp reveal */
+  .reveal { opacity: 0; transform: translateY(26px) scale(1.02); }
+  .reveal.in { animation: slam .55s cubic-bezier(.2,.9,.3,1) forwards; }
+  @keyframes slam {
+    60% { opacity: 1; transform: translateY(-3px) scale(1.005); }
+    100% { opacity: 1; transform: none; }
+  }
+
+  .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  @media (max-width: 920px) { .cards3 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 2px solid var(--ink); box-shadow: var(--shadow);
+    padding: 20px; display: flex; flex-direction: column; gap: 12px;
+    transition: transform .14s ease, box-shadow .14s ease;
+  }
+  .card:hover { transform: translate(-3px, -3px); box-shadow: 7px 7px 0 var(--ink); }
+  .card h3 {
+    margin: 0; font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h3 .n {
+    background: var(--yellow); border: 2px solid var(--ink); font-family: var(--mono);
+    font-size: 11px; padding: 1px 7px; box-shadow: 2px 2px 0 var(--ink);
+  }
+  .card p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .card p b { color: var(--ink); }
+
+  pre.code {
+    background: var(--ink); color: var(--paper); font-size: 11.5px; line-height: 1.65;
+    padding: 14px; margin: 0; overflow-x: auto; border: 2px solid var(--ink);
+  }
+  pre.code .c { color: #9a9384; }
+  pre.code .k { color: var(--yellow); } pre.code .s { color: var(--mint); }
+  pre.code .hl { background: rgba(255, 225, 77, 0.18); display: inline-block; width: 100%; }
+
+  /* validator demo card */
+  .flipper { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .big-badge {
+    border: 2px solid var(--ink); box-shadow: var(--shadow-sm); padding: 10px 14px;
+    font-size: 13px; font-weight: 700; background: var(--yellow);
+  }
+  .big-badge.ok { background: var(--mint); animation: stamp .35s cubic-bezier(.2,1.6,.4,1); }
+  .flip-detail { font-family: var(--mono); font-size: 10.5px; color: var(--muted); min-height: 32px; }
+  .flip-detail .bad { color: var(--red); }
+
+  /* ---------- how ---------- */
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 920px) { .steps { grid-template-columns: 1fr; } }
+  .step { position: relative; }
+  .step .card { height: 100%; }
+  .stepnum {
+    position: absolute; top: -16px; left: -10px; z-index: 2; transform: rotate(-4deg);
+    background: var(--yellow); border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    font-family: var(--mono); font-weight: 700; font-size: 14px; padding: 3px 10px;
+  }
+  .copyline { display: flex; gap: 0; align-items: stretch; }
+  .copyline pre.code { flex: 1; }
+  .copyline .btn { border-left: 0; box-shadow: none; }
+
+  .whisper {
+    margin-top: 40px; border: 2px dashed var(--ink); padding: 16px 20px;
+    font-size: 14px; color: var(--muted); max-width: 760px; background: var(--well);
+  }
+  .whisper b { color: var(--ink); }
+
+  /* ---------- features ---------- */
+  .feat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  @media (max-width: 920px) { .feat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .feat-grid { grid-template-columns: 1fr; } }
+  .feat {
+    background: var(--card); border: 2px solid var(--ink); box-shadow: var(--shadow-sm);
+    padding: 16px; transition: transform .14s, box-shadow .14s; position: relative; overflow: hidden;
+  }
+  .feat:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--ink); }
+  .feat h4 { margin: 8px 0 6px; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+  .feat p { margin: 0; font-size: 12px; color: var(--muted); }
+  .feat .ico { width: 14px; height: 14px; border: 3px solid var(--ink); display: block; }
+  .feat:nth-child(odd) .ico { background: var(--yellow); }
+  .feat:nth-child(even) .ico { background: var(--mint); transform: rotate(45deg); }
+  .feat:hover .ico { animation: stamp .3s; }
+
+  /* ---------- footer ---------- */
+  footer {
+    margin-top: 96px; border-top: 2px solid var(--ink); background: var(--ink); color: var(--paper);
+    padding: 40px 0 60px;
+  }
+  footer .wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+  footer .wordmark { color: var(--yellow); }
+  footer .wordmark .sq { border-color: var(--yellow); background: transparent; }
+  footer p { font-size: 12px; color: #b8b2a0; margin: 0; max-width: 52ch; }
+  footer .mono { font-size: 11px; color: #b8b2a0; margin-left: auto; }
+  @media (max-width: 720px) { footer .mono { margin-left: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    html { scroll-behavior: auto; }
+    .reveal, .rise { opacity: 1; transform: none; }
+    .marquee-track { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-in">
+    <a class="wordmark" href="#top"><span class="sq"></span>agent-hud</a>
+    <div class="nav-links">
+      <a href="#what">What it is</a>
+      <a href="#how">How to use</a>
+      <a href="#features">Features</a>
+    </div>
+    <button class="btn nav-cta mono" data-copy="npm install agent-hud">npm i agent-hud</button>
+  </div>
+</nav>
+
+<header class="hero wrap" id="top">
+  <div class="hero-grid">
+    <div>
+      <span class="kicker rise">Open source · for vibe coders · Next.js</span>
+      <h1 class="rise d1">Your agent says it built it.<br><span class="flip">This proves it.</span></h1>
+      <p class="sub rise d2">Your AI agent keeps a tiny YAML map of the app it's building — pages, APIs,
+        tasks, env, systems. <b>agent-hud</b> renders that map as a live panel and
+        <b>validates it against your real routes</b>, so the map can't silently lie.</p>
+      <div class="hero-ctas rise d3">
+        <button class="btn" data-copy="npm install agent-hud">⧉ Copy install command</button>
+        <a class="btn alt" href="#how">How it works ↓</a>
+      </div>
+    </div>
+
+    <div class="hud rise d4" id="hud" data-task="todo" aria-label="animated demo of the agent-hud panel">
+      <span class="hud-note">live · auto-refresh</span>
+      <div class="hud-bar">
+        <span class="t">Shoply</span><span class="f">agent-map.md</span><span class="fresh" id="fresh">updated 2s ago</span>
+      </div>
+      <div class="badge">
+        <span class="when-drift"><b>⚠ map drift</b>1 missing · pinged live</span>
+        <span class="when-ok"><b>✓ map verified</b>8 pages · 8 on disk</span>
+      </div>
+      <div class="lane-label">Pages</div>
+      <div class="noderow">
+        <div class="node"><span class="dot done"></span>Home<span class="path">/</span></div>
+        <div class="node"><span class="dot done"></span>Products<span class="path">/products</span></div>
+        <div class="node ghost" id="ghost"><span class="dot todo" id="ghostdot"></span>Wishlist<span class="path" id="ghostpath">/wishlist · missing</span></div>
+      </div>
+      <div class="lane-label">API routes</div>
+      <div class="noderow">
+        <div class="node api"><span class="health"></span>GET<span class="path">/api/products</span></div>
+        <div class="node api"><span class="health"></span>POST<span class="path">/api/checkout</span></div>
+      </div>
+      <div class="hud-cols">
+        <div class="hud-col" id="col-todo"><div class="ct">TO DO</div><div class="tcard">Build wishlist page</div></div>
+        <div class="hud-col" id="col-doing"><div class="ct">DOING</div><div class="tcard">Build wishlist page</div></div>
+        <div class="hud-col" id="col-done"><div class="ct">DONE</div><div class="tcard">Build wishlist page</div></div>
+      </div>
+      <div class="term"><span id="termline"></span><span class="cursor"></span></div>
+    </div>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="mq">
+    <span class="y">⚠ map drift</span><span>1 missing</span><span>2 undeclared</span>
+    <span class="m">✓ map verified</span><span>pages · apis · env · systems</span>
+    <span class="r">DATABASE_URL not set</span><span>health: responding</span>
+    <span class="y">copy fix prompt</span><span>updated 4s ago</span>
+  </div>
+</div>
+
+<section id="what">
+  <div class="wrap">
+    <span class="sec-label">What it is</span>
+    <h2>A render layer for agent state — with a lie detector.</h2>
+    <p class="lede">Not a code visualizer. Not a diagram generator. Your agent <b>declares</b> what it's
+      building in one markdown file; agent-hud draws it and <b>checks the declarations against the
+      filesystem</b>. Three parts:</p>
+
+    <div class="cards3">
+      <div class="card reveal">
+        <h3><span class="n">01</span> The file</h3>
+        <p>One <b>agent-map.md</b> at your repo root. Prose for humans, a YAML block for machines.
+           The agent updates it in the same turn as every change.</p>
+        <pre class="code" id="yaml-demo" aria-label="agent-map.md example"></pre>
+      </div>
+      <div class="card reveal">
+        <h3><span class="n">02</span> The panel</h3>
+        <p>A drop-in React page at <b>/agent-hud</b>, dev-only. Page map, API lane, systems,
+           env chips, kanban — auto-refreshing every 2 seconds while the agent works.</p>
+        <div class="lane-label">Pages</div>
+        <div class="noderow">
+          <div class="node"><span class="dot done"></span>Home<span class="path">/</span></div>
+          <div class="node"><span class="dot doing"></span>Blog<span class="path">/blog</span></div>
+        </div>
+        <div class="lane-label">Systems</div>
+        <div class="noderow">
+          <div class="node"><span class="dot doing"></span>Stripe<span class="path">payments</span></div>
+          <div class="node"><span class="dot done"></span>Postgres<span class="path">database</span></div>
+        </div>
+      </div>
+      <div class="card reveal">
+        <h3><span class="n">03</span> The validator</h3>
+        <p>Declared pages vs. real routes. Declared APIs vs. real handlers — <b>pinged live</b>.
+           Declared env names vs. <b>.env.example</b> and what's actually set. Drift is one glance.</p>
+        <div class="flipper">
+          <div class="big-badge" id="flipbadge"><b>⚠ MAP DRIFT</b> — declares 6 · 7 on disk</div>
+          <div class="flip-detail" id="flipdetail"><span class="bad">missing: /wishlist</span> · undeclared: /account, /orders</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <span class="sec-label">How to use it</span>
+    <h2>You don't install it. Your agent does.</h2>
+    <p class="lede">Paste one instruction to your agent — on Cursor, Claude Code, Lovable, Bolt,
+      wherever — and it wires everything up. Or do it by hand in four steps:</p>
+
+    <div class="steps">
+      <div class="step reveal">
+        <span class="stepnum">01</span>
+        <div class="card">
+          <h3>Install the package</h3>
+          <div class="copyline">
+            <pre class="code">npm install agent-hud</pre>
+            <button class="btn mono" data-copy="npm install agent-hud">⧉</button>
+          </div>
+          <p>One dependency (<span class="mono">yaml</span>). Ships as source; React 18+.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <span class="stepnum">02</span>
+        <div class="card">
+          <h3>Let Next transpile it</h3>
+          <pre class="code"><span class="c">// next.config.mjs</span>
+export default {
+  transpilePackages: [<span class="s">'agent-hud'</span>],
+}</pre>
+          <p>Next.js app directory is the one supported framework at launch.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <span class="stepnum">03</span>
+        <div class="card">
+          <h3>Mount the panel</h3>
+          <pre class="code"><span class="c">// app/agent-hud/page.tsx</span>
+<span class="k">import</span> { AgentHudPage } <span class="k">from</span> <span class="s">'agent-hud/next'</span>
+
+<span class="k">export const</span> dynamic = <span class="s">'force-dynamic'</span>
+<span class="k">export default function</span> Page() {
+  <span class="k">return</span> &lt;AgentHudPage /&gt;
+}</pre>
+          <p>Renders nothing in production unless you explicitly enable it.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <span class="stepnum">04</span>
+        <div class="card">
+          <h3>Teach your agent</h3>
+          <pre class="code"><span class="c"># AGENTS.md (shipped template)</span>
+Update agent-map.md <span class="k">in the same turn</span> as:
+- new/renamed/deleted routes → pages
+- new API handlers → apis + methods
+- new env NAMES (never values) → env
+- work started/finished → tasks</pre>
+          <p>Copy the shipped <b>AGENTS.md</b> into your repo. That's the persistence trick —
+             every future session re-reads it and keeps the map fresh.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="whisper reveal">
+      <b>Why the file matters:</b> the map lives in git, next to your code. Every commit that touches
+      it becomes a history entry in the panel — and when it drifts, one click copies a fix-prompt
+      you paste straight back to your agent.
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <span class="sec-label">Features</span>
+    <h2>Everything the panel watches for you.</h2>
+    <p class="lede">All of it dev-only by default, all of it driven by one YAML block.</p>
+    <div class="feat-grid">
+      <div class="feat reveal"><span class="ico"></span><h4>Drift badge</h4><p>Declared vs. real — pages and APIs. Missing and undeclared routes, named.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>API lane + methods</h4><p>route.ts handlers scanned, GET/POST/… extracted from exports.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>Health pings</h4><p>Each declared API is pinged live. Responding, 5xx, 404, unreachable.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>Env check</h4><p>Names vs. .env.example vs. what's actually set. Values never leave the server.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>History strip</h4><p>Git-powered recap: pages added, tasks done, drift introduced or fixed.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>Detail drawer</h4><p>Click any node: what it's made of, its connections, its tasks, its notes.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>Focus + filter</h4><p>Type to filter; select to dim everything but a node and its neighbors.</p></div>
+      <div class="feat reveal"><span class="ico"></span><h4>Copy fix prompt</h4><p>Drift found → one click copies the exact instruction to hand your agent.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="wordmark" href="#top"><span class="sq"></span>agent-hud</a>
+    <p>MIT licensed. A weekend project for people who build with agents and would like the
+       dashboard to tell the truth. Format inspired by JSON Canvas.</p>
+    <span class="mono">agent declares 1 website · 1 exists on disk · ✓ verified</span>
+  </div>
+</footer>
+
+<script>
+  const $ = (s) => document.querySelector(s)
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  // ----- copy buttons -----
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    const original = btn.textContent
+    btn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(btn.dataset.copy) } catch { return }
+      btn.classList.add('copied'); btn.textContent = '✓ copied'
+      setTimeout(() => { btn.classList.remove('copied'); btn.textContent = original }, 1500)
+    })
+  })
+
+  // ----- marquee: duplicate track for seamless loop -----
+  $('#mq').innerHTML += $('#mq').innerHTML
+
+  // ----- scroll reveals -----
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+  }, { threshold: 0.18 })
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+
+  // ----- hero HUD story loop -----
+  const hud = $('#hud'), term = $('#termline'), fresh = $('#fresh')
+  let freshSec = 2
+  setInterval(() => { fresh.textContent = 'updated ' + freshSec + 's ago'; freshSec = (freshSec % 9) + 1 }, 1000)
+
+  function type(text, done) {
+    if (reduced) { term.textContent = text; done && done(); return }
+    let i = 0; term.textContent = ''
+    const t = setInterval(() => {
+      term.textContent = text.slice(0, ++i)
+      if (i >= text.length) { clearInterval(t); done && done() }
+    }, 28)
+  }
+
+  const ghostPath = $('#ghostpath'), ghostDot = $('#ghostdot')
+  const story = [
+    { at: 0,    fn: () => { hud.classList.remove('built', 'verified'); hud.dataset.task = 'todo'; freshSec = 2
+                            ghostPath.textContent = '/wishlist · missing'; ghostDot.className = 'dot todo'
+                            type('▸ you: "also add a wishlist page"') } },
+    { at: 2600, fn: () => { hud.dataset.task = 'doing'; type('▸ agent: creating app/wishlist/page.tsx …') } },
+    { at: 5200, fn: () => { hud.classList.add('built'); ghostPath.textContent = '/wishlist'
+                            ghostDot.className = 'dot doing'; type('▸ agent: updating agent-map.md …') } },
+    { at: 7400, fn: () => { hud.classList.add('verified'); hud.dataset.task = 'done'; freshSec = 1
+                            ghostDot.className = 'dot done'
+                            type('▸ agent-hud: ✓ map verified — 8/8 routes real') } },
+  ]
+  const LOOP = 11000
+  function runStory() { story.forEach((s) => setTimeout(s.fn, s.at)) }
+  runStory(); setInterval(runStory, LOOP)
+
+  // ----- YAML typing (on reveal) -----
+  const yamlText = `pages:
+  - id: wishlist
+    path: /wishlist
+    status: doing
+apis:
+  - id: wishlist-api
+    path: /api/wishlist
+    methods: [GET, POST]
+env: [STRIPE_SECRET_KEY]
+tasks:
+  - title: "Build wishlist page"
+    status: doing`
+  const yamlEl = $('#yaml-demo')
+  const yio = new IntersectionObserver((es) => {
+    if (!es[0].isIntersecting) return
+    yio.disconnect()
+    if (reduced) { yamlEl.textContent = yamlText; return }
+    let i = 0
+    const t = setInterval(() => {
+      yamlEl.textContent = yamlText.slice(0, i += 3)
+      if (i >= yamlText.length) clearInterval(t)
+    }, 16)
+  }, { threshold: 0.4 })
+  yio.observe(yamlEl)
+
+  // ----- validator flip loop -----
+  const fb = $('#flipbadge'), fd = $('#flipdetail')
+  let ok = false
+  setInterval(() => {
+    ok = !ok
+    fb.classList.toggle('ok', ok)
+    fb.innerHTML = ok
+      ? '<b>✓ MAP VERIFIED</b> — declares 8 · 8 on disk'
+      : '<b>⚠ MAP DRIFT</b> — declares 6 · 7 on disk'
+    fd.innerHTML = ok
+      ? 'pages ✓ · apis ✓ · env ✓ · nothing to fix'
+      : '<span class="bad">missing: /wishlist</span> · undeclared: /account, /orders'
+  }, 3200)
+</script>
+</body>
+</html>
