@@ -8,7 +8,7 @@ import { parseAgentMap } from '../src/parser'
 
 describe('env', () => {
   it('reads names (never values) from .env.example', () => {
-    const root = mkdtempSync(join(tmpdir(), 'agent-hud-env-'))
+    const root = mkdtempSync(join(tmpdir(), 'vibehud-env-'))
     writeFileSync(
       join(root, '.env.example'),
       '# comment\nSTRIPE_KEY=sk_test_xxx\nexport DATABASE_URL=postgres://x\nBAD LINE\n',
@@ -17,7 +17,7 @@ describe('env', () => {
   })
 
   it('returns null when no example file exists', () => {
-    expect(scanEnvExample(mkdtempSync(join(tmpdir(), 'agent-hud-env2-')))).toBeNull()
+    expect(scanEnvExample(mkdtempSync(join(tmpdir(), 'vibehud-env2-')))).toBeNull()
   })
 
   it('builds a report with set/inExample flags and undeclared names', () => {

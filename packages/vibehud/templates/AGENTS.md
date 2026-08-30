@@ -1,7 +1,7 @@
-# Agent HUD — instructions for coding agents
+# Vibehud — instructions for coding agents
 
-This project uses **agent-hud**: you (the agent) maintain `agent-map.md` at the
-project root, and the app renders it live at `/agent-hud` (dev only). The panel
+This project uses **vibehud**: you (the agent) maintain `agent-map.md` at the
+project root, and the app renders it live at `/vibehud` (dev only). The panel
 validates your map against the real routes, so keep it truthful.
 
 ## When to update agent-map.md
@@ -18,7 +18,7 @@ Update the file **in the same turn** as the change it describes, whenever you:
    value) and to `.env.example`.
 6. Start, finish, or plan a piece of work → update `tasks` (todo/doing/done).
 7. Are asked about progress → update the file first, then point the user to
-   `/agent-hud`.
+   `/vibehud`.
 
 If the panel shows "map drift" (missing or undeclared routes), fixing
 `agent-map.md` is part of finishing your task.
@@ -89,17 +89,17 @@ Field rules:
 
 ## One-time setup (if not installed yet)
 
-1. `npm install agent-hud`
-2. Add `transpilePackages: ['agent-hud']` to `next.config`.
-3. Create `app/agent-hud/page.tsx`:
+1. `npm install vibehud`
+2. Add `transpilePackages: ['vibehud']` to `next.config`.
+3. Create `app/vibehud/page.tsx`:
 
 ```tsx
-import { AgentHudPage } from 'agent-hud/next'
+import { VibehudPage } from 'vibehud/next'
 
 export const dynamic = 'force-dynamic'
 
 export default function Page() {
-  return <AgentHudPage />
+  return <VibehudPage />
 }
 ```
 
@@ -108,4 +108,4 @@ export default function Page() {
    instruction file (AGENTS.md / CLAUDE.md / .cursor/rules) so future sessions
    keep the map fresh.
 
-The panel is disabled in production builds unless `AGENT_HUD_ENABLE=1` is set.
+The panel is disabled in production builds unless `VIBEHUD_ENABLE=1` is set.

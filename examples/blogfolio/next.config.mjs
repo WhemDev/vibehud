@@ -1,1 +1,1 @@
-export default { transpilePackages: ['agent-hud'] }
+export default { transpilePackages: ['vibehud'] }

@@ -51,7 +51,7 @@ export function validateMap(
   const app: ScannedApp = Array.isArray(scanned) ? { pages: scanned, apis: [] } : scanned
   const checkApis = !Array.isArray(scanned)
 
-  const ignore = new Set((options.ignore ?? ['/agent-hud']).map(normalizeRoute))
+  const ignore = new Set((options.ignore ?? ['/vibehud']).map(normalizeRoute))
   const declaredPages = new Set(map.pages.map((p) => normalizeRoute(p.path)))
   const foundPages = new Set(app.pages.map(normalizeRoute).filter((r) => !ignore.has(r)))
   const pages = diff(declaredPages, foundPages)

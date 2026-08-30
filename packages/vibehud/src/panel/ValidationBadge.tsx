@@ -6,7 +6,7 @@ import { theme } from './theme'
 
 function fixPrompt(report: ValidationReport): string {
   const lines = [
-    'agent-map.md has drifted from the codebase. Update it so the HUD at /agent-hud shows "map verified":',
+    'agent-map.md has drifted from the codebase. Update it so the HUD at /vibehud shows "map verified":',
   ]
   if (report.missing.length > 0)
     lines.push(

@@ -3,19 +3,19 @@ import { dirname, join } from 'node:path'
 import { buildEnvReport, scanEnvExample } from './env'
 import { getMapHistory } from './history'
 import { parseAgentMap } from './parser'
-import { AgentHudPanel } from './panel/AgentHudPanel'
+import { VibehudPanel } from './panel/VibehudPanel'
 import { AutoRefresh } from './panel/AutoRefresh'
 import { scanNextApp } from './scanner'
 import { validateMap, type ValidationReport } from './validate'
 
-export interface AgentHudPageOptions {
+export interface VibehudPageOptions {
   /** Project root holding agent-map.md. Default: walk up from cwd to find it. */
   root?: string
   /** State file name. Default: agent-map.md */
   file?: string
   /** Next.js app directory. Default: <root>/app or <root>/src/app. */
   appDir?: string
-  /** Route the HUD itself is mounted on, excluded from validation. Default: /agent-hud */
+  /** Route the HUD itself is mounted on, excluded from validation. Default: /vibehud */
   hudRoute?: string
   /** Live-update poll interval in ms; 0 disables. Default: 2000. */
   refreshMs?: number
@@ -33,12 +33,12 @@ function findRoot(start: string, file: string): string {
 }
 
 /**
- * Server component for the generated app/agent-hud/page.tsx.
+ * Server component for the generated app/vibehud/page.tsx.
  * Reads agent-map.md, scans the app directory, validates, renders the panel.
- * Returns null (404-ish empty page) in production unless AGENT_HUD_ENABLE=1.
+ * Returns null (404-ish empty page) in production unless VIBEHUD_ENABLE=1.
  */
-export function AgentHudPage(options: AgentHudPageOptions = {}) {
-  if (process.env.NODE_ENV === 'production' && process.env.AGENT_HUD_ENABLE !== '1') {
+export function VibehudPage(options: VibehudPageOptions = {}) {
+  if (process.env.NODE_ENV === 'production' && process.env.VIBEHUD_ENABLE !== '1') {
     return null
   }
 
@@ -51,7 +51,7 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
     return (
       <>
         {refresh}
-        <AgentHudPanel error={`${file} not found at ${root}`} />
+        <VibehudPanel error={`${file} not found at ${root}`} />
       </>
     )
   }
@@ -61,7 +61,7 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
     return (
       <>
         {refresh}
-        <AgentHudPanel error={error ?? 'could not parse the map'} />
+        <VibehudPanel error={error ?? 'could not parse the map'} />
       </>
     )
   }
@@ -73,7 +73,7 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
   let report: ValidationReport | undefined
   if (existsSync(appDir)) {
     report = validateMap(map, scanNextApp(appDir), {
-      ignore: [options.hudRoute ?? '/agent-hud'],
+      ignore: [options.hudRoute ?? '/vibehud'],
     })
   } else {
     warnings.push(`no Next.js app directory found at ${appDir}; validation skipped`)
@@ -96,7 +96,7 @@ export function AgentHudPage(options: AgentHudPageOptions = {}) {
   return (
     <>
       {refresh}
-      <AgentHudPanel
+      <VibehudPanel
         map={map}
         report={report}
         warnings={warnings}

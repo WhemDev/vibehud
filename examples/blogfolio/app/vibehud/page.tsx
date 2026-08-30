@@ -1,7 +1,7 @@
-import { AgentHudPage } from 'agent-hud/next'
+import { VibehudPage } from 'vibehud/next'
 
 export const dynamic = 'force-dynamic'
 
 export default function Page() {
-  return <AgentHudPage />
+  return <VibehudPage />
 }

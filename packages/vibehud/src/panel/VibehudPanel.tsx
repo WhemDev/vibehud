@@ -14,7 +14,7 @@ import { FONTS_URL, theme } from './theme'
 import { useApiHealth } from './useApiHealth'
 import { ValidationBadge } from './ValidationBadge'
 
-export interface AgentHudPanelProps {
+export interface VibehudPanelProps {
   map?: AgentMap
   report?: ValidationReport
   warnings?: string[]
@@ -107,7 +107,7 @@ function Progress({ map }: { map: AgentMap }) {
   )
 }
 
-export function AgentHudPanel({
+export function VibehudPanel({
   map,
   report,
   warnings = [],
@@ -115,7 +115,7 @@ export function AgentHudPanel({
   updatedAt,
   envReport,
   history = [],
-}: AgentHudPanelProps) {
+}: VibehudPanelProps) {
   const [selection, setSelection] = useState<Selection>(null)
   const [query, setQuery] = useState('')
   const health = useApiHealth(map?.apis ?? [])
@@ -134,7 +134,7 @@ export function AgentHudPanel({
             margin: 0,
           }}
         >
-          {map?.app ?? 'Agent HUD'}
+          {map?.app ?? 'Vibehud'}
         </h1>
         <span style={{ fontSize: 12, color: theme.muted, fontFamily: theme.fontMono }}>
           agent-map.md

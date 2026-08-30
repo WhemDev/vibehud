@@ -8,7 +8,7 @@ block).
 ````markdown
 # My App — agent map
 
-Maintained by the coding agent. Humans: read the panel at /agent-hud.
+Maintained by the coding agent. Humans: read the panel at /vibehud.
 
 ```yaml agent-map
 version: 1                # required, currently always 1

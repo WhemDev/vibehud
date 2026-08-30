@@ -1,12 +1,12 @@
 {
-  "name": "agent-hud-monorepo",
+  "name": "vibehud-monorepo",
   "private": true,
   "workspaces": [
     "packages/*",
     "examples/*"
   ],
   "scripts": {
-    "test": "npm test -w agent-hud"
+    "test": "npm test -w vibehud"
   },
   "devDependencies": {
     "playwright": "^1.62.1"

@@ -1,15 +1,15 @@
 {
-  "name": "agent-hud",
+  "name": "vibehud",
   "version": "0.1.0",
-  "description": "A drop-in HUD for AI-agent state: your agent maintains agent-map.md, agent-hud renders it as a live map + kanban and validates it against your real routes.",
+  "description": "A drop-in HUD for AI-agent state: your agent maintains agent-map.md, vibehud renders it as a live map + kanban and validates it against your real routes.",
   "license": "MIT",
-  "homepage": "https://agent-hud-five.vercel.app",
+  "homepage": "https://vibehud.vercel.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/WhemDev/agent-hud.git",
-    "directory": "packages/agent-hud"
+    "url": "git+https://github.com/WhemDev/vibehud.git",
+    "directory": "packages/vibehud"
   },
-  "bugs": "https://github.com/WhemDev/agent-hud/issues",
+  "bugs": "https://github.com/WhemDev/vibehud/issues",
   "keywords": [
     "ai",
     "agent",
@@ -21,7 +21,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./next": "./src/next.tsx",
-    "./panel": "./src/panel/AgentHudPanel.tsx"
+    "./panel": "./src/panel/VibehudPanel.tsx"
   },
   "files": [
     "src",

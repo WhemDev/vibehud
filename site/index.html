@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>agent-hud — your agent says it built it. This proves it.</title>
-<meta name="description" content="agent-hud is an open source render layer for AI-agent state: your coding agent maintains agent-map.md, agent-hud renders it as a live map + kanban and validates it against your real Next.js routes.">
+<title>vibehud — your agent says it built it. This proves it.</title>
+<meta name="description" content="vibehud is an open source render layer for AI-agent state: your coding agent maintains agent-map.md, vibehud renders it as a live map + kanban and validates it against your real Next.js routes.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='8' y='8' width='84' height='84' fill='%23ffe14d' stroke='%2314120e' stroke-width='8'/><rect x='30' y='30' width='40' height='40' fill='%2314120e'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap">
@@ -450,14 +450,14 @@
 
 <nav>
   <div class="nav-in">
-    <a class="wordmark" href="#top"><span class="sq"></span>agent-hud</a>
+    <a class="wordmark" href="#top"><span class="sq"></span>vibehud</a>
     <div class="nav-links">
       <a href="#what">What it is</a>
       <a href="#how">How to use</a>
       <a href="#features">Features</a>
     </div>
-    <a class="btn alt nav-cta mono" id="gh-stars" href="https://github.com/WhemDev/agent-hud" target="_blank" rel="noopener">★ GitHub</a>
-    <button class="btn mono" data-copy="npm install agent-hud">npm i agent-hud</button>
+    <a class="btn alt nav-cta mono" id="gh-stars" href="https://github.com/WhemDev/vibehud" target="_blank" rel="noopener">★ GitHub</a>
+    <button class="btn mono" data-copy="npm install vibehud">npm i vibehud</button>
   </div>
   <span class="sync-dot" aria-hidden="true"></span>
 </nav>
@@ -474,7 +474,7 @@
         <span class="line-mask"><span class="line"><span class="flip">This proves it.</span></span></span>
       </h1>
       <p class="sub rise d2">Your AI agent keeps a tiny YAML map of the app it's building — pages, APIs,
-        tasks, env, systems. <b>agent-hud</b> renders that map as a live panel and
+        tasks, env, systems. <b>vibehud</b> renders that map as a live panel and
         <b>validates it against your real routes</b>, so the map can't silently lie.</p>
       <div class="hero-ctas rise d3">
         <button class="btn shine copy-prompt">⧉ Copy the agent prompt</button>
@@ -490,24 +490,24 @@
         <b>Paste this to your agent</b>
         <span class="mini">cursor · claude code · lovable · bolt · replit</span>
       </div>
-      <pre id="prompt-text">Set up agent-hud in this project, then keep it updated.
+      <pre id="prompt-text">Set up vibehud in this project, then keep it updated.
 
-<span class="n">1.</span> npm install agent-hud
-<span class="n">2.</span> Add transpilePackages: ['agent-hud'] to next.config.
-<span class="n">3.</span> Create <span class="p">app/agent-hud/page.tsx</span>:
-     import { AgentHudPage } from 'agent-hud/next'
+<span class="n">1.</span> npm install vibehud
+<span class="n">2.</span> Add transpilePackages: ['vibehud'] to next.config.
+<span class="n">3.</span> Create <span class="p">app/vibehud/page.tsx</span>:
+     import { VibehudPage } from 'vibehud/next'
      export const dynamic = 'force-dynamic'
-     export default function Page() { return &lt;AgentHudPage /&gt; }
+     export default function Page() { return &lt;VibehudPage /&gt; }
 <span class="n">4.</span> Create <span class="p">agent-map.md</span> at the repo root describing THIS
    app — yaml block with pages, apis, systems, env NAMES
    (never values), tasks.
-   <span class="d">Spec: node_modules/agent-hud/spec/FORMAT.md</span>
-<span class="n">5.</span> Copy <span class="p">node_modules/agent-hud/templates/AGENTS.md</span> into my
+   <span class="d">Spec: node_modules/vibehud/spec/FORMAT.md</span>
+<span class="n">5.</span> Copy <span class="p">node_modules/vibehud/templates/AGENTS.md</span> into my
    agent instructions (AGENTS.md / CLAUDE.md / .cursor/rules)
    so every future session updates the map in the same turn
    as any change.
 
-Then tell me to open <span class="p">/agent-hud</span>.<span class="cursor"></span></pre>
+Then tell me to open <span class="p">/vibehud</span>.<span class="cursor"></span></pre>
       <div class="prompt-foot">
         <button class="btn shine copy-prompt">⧉ Copy prompt</button>
         <span class="note">your agent does the rest · panel is dev-only</span>
@@ -530,7 +530,7 @@ Then tell me to open <span class="p">/agent-hud</span>.<span class="cursor"></sp
     <span class="sec-label">What it is · declared, then verified</span>
     <h2>A render layer for agent state — with a lie detector.</h2>
     <p class="lede">Not a code visualizer. Not a diagram generator. Your agent <b>declares</b> what it's
-      building in one markdown file; agent-hud draws it and <b>checks the declarations against the
+      building in one markdown file; vibehud draws it and <b>checks the declarations against the
       filesystem</b>. Three parts:</p>
 
     <div class="cards3">
@@ -542,9 +542,9 @@ Then tell me to open <span class="p">/agent-hud</span>.<span class="cursor"></sp
       </div>
       <div class="card reveal">
         <h3><span class="n">02</span> The panel</h3>
-        <p>A drop-in React page at <b>/agent-hud</b>, dev-only. Page map, API lane, systems,
+        <p>A drop-in React page at <b>/vibehud</b>, dev-only. Page map, API lane, systems,
            env chips, kanban — auto-refreshing every 2 seconds while the agent works.</p>
-        <div class="hud" id="hud" data-task="todo" aria-label="animated demo of the agent-hud panel">
+        <div class="hud" id="hud" data-task="todo" aria-label="animated demo of the vibehud panel">
           <span class="hud-note">live · auto-refresh</span>
           <div class="hud-bar">
             <span class="t">Shoply</span><span class="f">agent-map.md</span><span class="fresh" id="fresh">updated 2s ago</span>
@@ -596,8 +596,8 @@ Then tell me to open <span class="p">/agent-hud</span>.<span class="cursor"></sp
         <div class="card">
           <h3>Install the package</h3>
           <div class="copyline">
-            <pre class="code">npm install agent-hud</pre>
-            <button class="btn mono" data-copy="npm install agent-hud">⧉</button>
+            <pre class="code">npm install vibehud</pre>
+            <button class="btn mono" data-copy="npm install vibehud">⧉</button>
           </div>
           <p>One dependency (<span class="mono">yaml</span>). Ships as source; React 18+.</p>
         </div>
@@ -608,7 +608,7 @@ Then tell me to open <span class="p">/agent-hud</span>.<span class="cursor"></sp
           <h3>Let Next transpile it</h3>
           <pre class="code"><span class="c">// next.config.mjs</span>
 export default {
-  transpilePackages: [<span class="s">'agent-hud'</span>],
+  transpilePackages: [<span class="s">'vibehud'</span>],
 }</pre>
           <p>Next.js app directory is the one supported framework at launch.</p>
         </div>
@@ -617,12 +617,12 @@ export default {
         <span class="stepnum">03</span>
         <div class="card">
           <h3>Mount the panel</h3>
-          <pre class="code"><span class="c">// app/agent-hud/page.tsx</span>
-<span class="k">import</span> { AgentHudPage } <span class="k">from</span> <span class="s">'agent-hud/next'</span>
+          <pre class="code"><span class="c">// app/vibehud/page.tsx</span>
+<span class="k">import</span> { VibehudPage } <span class="k">from</span> <span class="s">'vibehud/next'</span>
 
 <span class="k">export const</span> dynamic = <span class="s">'force-dynamic'</span>
 <span class="k">export default function</span> Page() {
-  <span class="k">return</span> &lt;AgentHudPage /&gt;
+  <span class="k">return</span> &lt;VibehudPage /&gt;
 }</pre>
           <p>Renders nothing in production unless you explicitly enable it.</p>
         </div>
@@ -671,8 +671,8 @@ Update agent-map.md <span class="k">in the same turn</span> as:
 
 <footer>
   <div class="wrap">
-    <a class="wordmark" href="#top"><span class="sq"></span>agent-hud</a>
-    <p>MIT licensed — <a href="https://github.com/WhemDev/agent-hud" style="color: var(--yellow)">github.com/WhemDev/agent-hud</a>.
+    <a class="wordmark" href="#top"><span class="sq"></span>vibehud</a>
+    <p>MIT licensed — <a href="https://github.com/WhemDev/vibehud" style="color: var(--yellow)">github.com/WhemDev/vibehud</a>.
        A weekend project for people who build with agents and would like the
        dashboard to tell the truth. Format inspired by JSON Canvas.</p>
     <span class="mono">agent declares 1 website · 1 exists on disk · ✓ verified</span>
@@ -749,7 +749,7 @@ Update agent-map.md <span class="k">in the same turn</span> as:
     }
     const cached = (() => { try { return JSON.parse(sessionStorage.getItem('ghstars')) } catch { return null } })()
     if (cached && Date.now() - cached.t < 3600000) render(cached.n)
-    else fetch('https://api.github.com/repos/WhemDev/agent-hud')
+    else fetch('https://api.github.com/repos/WhemDev/vibehud')
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (typeof d?.stargazers_count !== 'number') return
@@ -807,7 +807,7 @@ Update agent-map.md <span class="k">in the same turn</span> as:
                             ghostDot.className = 'dot doing'; type('▸ agent: updating agent-map.md …') } },
     { at: 7400, fn: () => { hud.classList.add('verified'); hud.dataset.task = 'done'; freshSec = 1
                             ghostDot.className = 'dot done'
-                            type('▸ agent-hud: ✓ map verified — 8/8 routes real') } },
+                            type('▸ vibehud: ✓ map verified — 8/8 routes real') } },
   ]
   const LOOP = 11000
   function runStory() { story.forEach((s) => setTimeout(s.fn, s.at)) }

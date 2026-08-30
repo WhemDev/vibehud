@@ -1,4 +1,4 @@
-// Records the agent-hud demo: an "agent session" edits agent-map.md and the
+// Records the vibehud demo: an "agent session" edits agent-map.md and the
 // filesystem while the panel live-updates. Run from the repo root with the
 // shoply dev server already up on :3102. Output: demo/out/*.webm
 import { chromium } from 'playwright'
@@ -19,7 +19,7 @@ const context = await browser.newContext({
   recordVideo: { dir: ROOT + 'demo/out', size: { width: 1440, height: 860 } },
 })
 const page = await context.newPage()
-await page.goto('http://localhost:3102/agent-hud')
+await page.goto('http://localhost:3102/vibehud')
 await page.waitForSelector('text=map drift')
 console.log('recording: opening state (drift)')
 await sleep(3500)

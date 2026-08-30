@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { scanNextAppRoutes } from '../src/scanner'
 
 function makeApp(files: string[]): string {
-  const root = mkdtempSync(join(tmpdir(), 'agent-hud-scan-'))
+  const root = mkdtempSync(join(tmpdir(), 'vibehud-scan-'))
   for (const f of files) {
     const full = join(root, f)
     mkdirSync(join(full, '..'), { recursive: true })

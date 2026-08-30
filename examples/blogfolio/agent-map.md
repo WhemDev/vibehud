@@ -1,8 +1,8 @@
 # Blogfolio — agent map
 
-Maintained by the coding agent. Humans: open `/agent-hud` in dev to see this
+Maintained by the coding agent. Humans: open `/vibehud` in dev to see this
 rendered. Machine-readable state is the block below; format spec lives in the
-`agent-hud` package (`spec/FORMAT.md`).
+`vibehud` package (`spec/FORMAT.md`).
 
 ```yaml agent-map
 version: 1

@@ -36,7 +36,7 @@ describe('validateMap', () => {
   })
 
   it('ignores the hud route itself by default', () => {
-    const r = validateMap(mapWith(['/']), ['/', '/agent-hud'])
+    const r = validateMap(mapWith(['/']), ['/', '/vibehud'])
     expect(r.undeclared).toEqual([])
     expect(r.ok).toBe(true)
   })

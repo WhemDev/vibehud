@@ -1,8 +1,8 @@
-# agent-hud
+# vibehud
 
 A render layer for AI-agent state. Your coding agent maintains a small YAML
-block in `agent-map.md` (pages, relations, tasks); agent-hud renders it as a
-live **map + kanban** at `/agent-hud` and **validates** the declared pages
+block in `agent-map.md` (pages, relations, tasks); vibehud renders it as a
+live **map + kanban** at `/vibehud` and **validates** the declared pages
 against your real Next.js routes — so the map cannot silently lie.
 
 - Not a code visualizer, not a diagram generator. It shows what the agent
@@ -12,20 +12,20 @@ against your real Next.js routes — so the map cannot silently lie.
 ## Install (agents do this — see templates/AGENTS.md)
 
 ```bash
-npm install agent-hud
+npm install vibehud
 ```
 
 ```js
 // next.config.mjs
-export default { transpilePackages: ['agent-hud'] }
+export default { transpilePackages: ['vibehud'] }
 ```
 
 ```tsx
-// app/agent-hud/page.tsx
-import { AgentHudPage } from 'agent-hud/next'
+// app/vibehud/page.tsx
+import { VibehudPage } from 'vibehud/next'
 export const dynamic = 'force-dynamic'
 export default function Page() {
-  return <AgentHudPage />
+  return <VibehudPage />
 }
 ```
 
@@ -37,9 +37,9 @@ the map updated every session.
 ## API
 
 ```ts
-import { parseAgentMap, scanNextAppRoutes, validateMap } from 'agent-hud'
-import { AgentHudPanel } from 'agent-hud/panel'   // client component
-import { AgentHudPage } from 'agent-hud/next'     // server component
+import { parseAgentMap, scanNextAppRoutes, validateMap } from 'vibehud'
+import { VibehudPanel } from 'vibehud/panel'   // client component
+import { VibehudPage } from 'vibehud/next'     // server component
 ```
 
 - `parseAgentMap(markdown)` → `{ map?, warnings, error? }`
@@ -47,7 +47,7 @@ import { AgentHudPage } from 'agent-hud/next'     // server component
 - `validateMap(map, routes)` → `{ ok, matched, missing, undeclared, … }`
 
 Dev-only by default: the page renders nothing in production unless
-`AGENT_HUD_ENABLE=1`.
+`VIBEHUD_ENABLE=1`.
 
 ## Status
 
