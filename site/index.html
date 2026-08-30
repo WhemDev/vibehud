@@ -114,6 +114,9 @@
   }
   .nav-cta { margin-left: 12px; }
   @media (max-width: 720px) { .nav-cta { margin-left: auto; } }
+  #gh-stars .cnt { color: var(--orange); margin-left: 4px; }
+  #gh-stars.bump .cnt { display: inline-block; animation: stamp .35s cubic-bezier(.2,1.6,.4,1); }
+  @media (max-width: 560px) { .nav-in > .btn[data-copy] { display: none; } }
 
   /* ---------- hero (layered texture: grid < glyph canvas < scrim < copy) ---------- */
   .hero { padding: 72px 0 40px; position: relative; }
@@ -453,7 +456,8 @@
       <a href="#how">How to use</a>
       <a href="#features">Features</a>
     </div>
-    <button class="btn nav-cta mono" data-copy="npm install agent-hud">npm i agent-hud</button>
+    <a class="btn alt nav-cta mono" id="gh-stars" href="https://github.com/WhemDev/agent-hud" target="_blank" rel="noopener">★ GitHub</a>
+    <button class="btn mono" data-copy="npm install agent-hud">npm i agent-hud</button>
   </div>
   <span class="sync-dot" aria-hidden="true"></span>
 </nav>
@@ -668,7 +672,8 @@ Update agent-map.md <span class="k">in the same turn</span> as:
 <footer>
   <div class="wrap">
     <a class="wordmark" href="#top"><span class="sq"></span>agent-hud</a>
-    <p>MIT licensed. A weekend project for people who build with agents and would like the
+    <p>MIT licensed — <a href="https://github.com/WhemDev/agent-hud" style="color: var(--yellow)">github.com/WhemDev/agent-hud</a>.
+       A weekend project for people who build with agents and would like the
        dashboard to tell the truth. Format inspired by JSON Canvas.</p>
     <span class="mono">agent declares 1 website · 1 exists on disk · ✓ verified</span>
   </div>
@@ -734,6 +739,25 @@ Update agent-map.md <span class="k">in the same turn</span> as:
   const promptText = () => $('#prompt-text').textContent.trim()
   document.querySelectorAll('.copy-prompt').forEach((btn) =>
     wireCopy(btn, promptText, '✓ copied — go paste it'))
+
+  // ----- GitHub star tracker (cached 1h; falls back to plain link) -----
+  const ghBtn = $('#gh-stars')
+  if (ghBtn) {
+    const render = (n) => {
+      ghBtn.innerHTML = '★ GitHub<span class="cnt">' + (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n) + '</span>'
+      ghBtn.classList.add('bump')
+    }
+    const cached = (() => { try { return JSON.parse(sessionStorage.getItem('ghstars')) } catch { return null } })()
+    if (cached && Date.now() - cached.t < 3600000) render(cached.n)
+    else fetch('https://api.github.com/repos/WhemDev/agent-hud')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (typeof d?.stargazers_count !== 'number') return
+        render(d.stargazers_count)
+        try { sessionStorage.setItem('ghstars', JSON.stringify({ n: d.stargazers_count, t: Date.now() })) } catch {}
+      })
+      .catch(() => {})
+  }
 
   // ----- word roulette (stacked words, transform/opacity — solarch pattern) -----
   const cyStack = $('#cycler')
