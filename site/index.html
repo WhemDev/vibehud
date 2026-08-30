@@ -716,7 +716,7 @@ Update agent-map.md <span class="k">in the same turn</span> as:
       if (!reduced) requestAnimationFrame(draw)
     }
     resize()
-    addEventListener('resize', resize)
+    new ResizeObserver(() => { resize(); if (reduced) draw(0) }).observe(gcv)
     reduced ? draw(0) : requestAnimationFrame(draw)
   }
 
