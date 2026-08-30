@@ -28,7 +28,6 @@ Manual setup, the format spec, and the agent instruction template live in
 
 - **Drift badge** — declared pages/APIs vs. what actually exists on disk, with
   a one-click "copy fix prompt" to hand the reconciliation back to your agent
-- **Map** — pages (BFS-layered), API routes with methods, declaration-only
   systems band; click any node for a detail drawer (elements, connections,
   tasks, notes)
 - **Live health** — each declared API pinged in dev (responding / 5xx / 404)

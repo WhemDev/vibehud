@@ -42,6 +42,19 @@ systems:                  # optional — external services, declaration-only
     status: doing         # todo | doing | done (default done)
     note: "free text"     # optional
 
+flows:                    # optional — backend pipelines whose steps have no
+                          # route of their own (webhooks, jobs, emails)
+  - id: checkout-flow     # required, unique (shared id space)
+    label: "Checkout pipeline"  # optional, defaults to id
+    status: doing         # todo | doing | done (default doing)
+    note: "free text"     # optional
+    steps:                # ordered; rendered as a step chain
+      - "Fulfill order"   # string shorthand, or:
+      - label: "Stripe webhook"   # required
+        uses: stripe      # optional page/api/system id (integrity-checked)
+        status: doing     # todo | doing | done (default done)
+        note: "free text" # optional
+
 env:                      # optional — env var NAMES the app needs (never values)
   - DATABASE_URL          # string shorthand, or:
   - name: STRIPE_SECRET_KEY

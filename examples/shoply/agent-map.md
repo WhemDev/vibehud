@@ -96,6 +96,36 @@ systems:
     kind: database
     status: done
 
+flows:
+  - id: checkout-flow
+    label: "Checkout pipeline"
+    status: doing
+    note: "Order path from cart to confirmation email."
+    steps:
+      - label: "Validate cart"
+        uses: cart
+        status: done
+      - label: "Create payment intent"
+        uses: checkout-api
+        status: done
+      - label: "Stripe webhook"
+        uses: stripe
+        status: doing
+        note: "Signature verification not wired yet."
+      - label: "Write order row"
+        uses: db
+        status: doing
+      - label: "Confirmation email"
+        status: todo
+  - id: catalog-sync
+    label: "Catalog sync"
+    status: done
+    steps:
+      - label: "Nightly import job"
+      - label: "Normalize products"
+      - label: "Upsert catalog"
+        uses: db
+
 env:
   - name: DATABASE_URL
   - name: STRIPE_SECRET_KEY

@@ -1,6 +1,6 @@
 {
   "name": "vibehud",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A drop-in HUD for AI-agent state: your agent maintains agent-map.md, vibehud renders it as a live map + kanban and validates it against your real routes.",
   "license": "MIT",
   "homepage": "https://vibehud-one.vercel.app",

@@ -116,6 +116,9 @@ tasks:
   - id: cli
     title: "npx vibehud check CLI (exit codes + --json)"
     status: done
+  - id: flows-panzoom
+    title: "Backend flows section + pan/zoom map canvas with clamped bounds"
+    status: done
   - id: redemo
     title: "Re-record demo under the vibehud name (current mp4 is pre-rebrand)"
     status: todo

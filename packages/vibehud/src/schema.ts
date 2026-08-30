@@ -53,12 +53,34 @@ export interface EnvVar {
   note?: string
 }
 
+export interface FlowStep {
+  label: string
+  /** Optional page/api/system id this step runs through (integrity-checked). */
+  uses?: string
+  status: Status
+  note?: string
+}
+
+/**
+ * A backend pipeline: an ordered sequence of steps. Steps often have no
+ * route of their own (webhook processing, jobs, emails) — flows are where
+ * that hidden machinery gets declared.
+ */
+export interface Flow {
+  id: string
+  label: string
+  status: Status
+  steps: FlowStep[]
+  note?: string
+}
+
 export interface AgentMap {
   version: number
   app?: string
   pages: PageNode[]
   apis: ApiRoute[]
   systems: SystemNode[]
+  flows: Flow[]
   env: EnvVar[]
   relations: Relation[]
   tasks: Task[]
@@ -72,7 +94,7 @@ export interface NormalizeResult {
 const STATUSES: Status[] = ['todo', 'doing', 'done']
 const RELATION_TYPES: RelationType[] = ['nav', 'data', 'auth', 'other']
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
-const KNOWN_KEYS = new Set(['version', 'app', 'pages', 'apis', 'systems', 'env', 'relations', 'tasks'])
+const KNOWN_KEYS = new Set(['version', 'app', 'pages', 'apis', 'systems', 'flows', 'env', 'relations', 'tasks'])
 
 function asString(v: unknown): string | undefined {
   if (typeof v === 'string' && v.trim() !== '') return v.trim()
@@ -91,6 +113,7 @@ export function normalizeMap(raw: unknown): NormalizeResult {
     pages: [],
     apis: [],
     systems: [],
+    flows: [],
     env: [],
     relations: [],
     tasks: [],
@@ -208,6 +231,49 @@ export function normalizeMap(raw: unknown): NormalizeResult {
     const note = asString(e.note)
     if (note) system.note = note
     map.systems.push(system)
+  }
+
+  const seenFlowIds = new Set<string>()
+  for (const [i, entry] of toArray(obj.flows, 'flows', warnings).entries()) {
+    const e = asObject(entry)
+    const id = e && asString(e.id)
+    if (!id) {
+      warnings.push(`flows[${i}] needs an "id"; dropped`)
+      continue
+    }
+    if (seenFlowIds.has(id) || seenSystemIds.has(id) || seenApiIds.has(id) || seenPageIds.has(id)) {
+      warnings.push(`flows[${i}] duplicates id "${id}"; dropped`)
+      continue
+    }
+    seenFlowIds.add(id)
+    const steps: FlowStep[] = []
+    for (const [j, stepEntry] of toArray(e.steps, `flows[${i}].steps`, warnings).entries()) {
+      const asStr = asString(stepEntry)
+      const s = asObject(stepEntry)
+      const label = asStr ?? (s && asString(s.label))
+      if (!label) {
+        warnings.push(`flows[${i}].steps[${j}] needs a "label"; dropped`)
+        continue
+      }
+      const step: FlowStep = {
+        label,
+        status: normalizeStatus(s?.status, 'done', `flows[${i}].steps[${j}]`, warnings),
+      }
+      const uses = s ? asString(s.uses) : undefined
+      if (uses) step.uses = uses
+      const stepNote = s ? asString(s.note) : undefined
+      if (stepNote) step.note = stepNote
+      steps.push(step)
+    }
+    const flow: Flow = {
+      id,
+      label: asString(e.label) ?? id,
+      status: normalizeStatus(e.status, 'doing', `flows[${i}]`, warnings),
+      steps,
+    }
+    const note = asString(e.note)
+    if (note) flow.note = note
+    map.flows.push(flow)
   }
 
   const seenEnvNames = new Set<string>()

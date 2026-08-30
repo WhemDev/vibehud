@@ -6,7 +6,7 @@ import { normalizeRoute, type ValidationReport } from '../validate'
 import { statusColor, theme } from './theme'
 import type { ApiHealth } from './useApiHealth'
 
-export type Selection = { kind: 'page' | 'api' | 'task' | 'system'; id: string } | null
+export type Selection = { kind: 'page' | 'api' | 'task' | 'system' | 'flow'; id: string } | null
 
 const drawer: CSSProperties = {
   position: 'fixed',
@@ -114,7 +114,8 @@ export function DetailDrawer({
   const task = selection.kind === 'task' ? map.tasks.find((t) => t.id === selection.id) : undefined
   const system =
     selection.kind === 'system' ? map.systems.find((s) => s.id === selection.id) : undefined
-  const entity = page ?? api ?? task ?? system
+  const flow = selection.kind === 'flow' ? map.flows.find((f) => f.id === selection.id) : undefined
+  const entity = page ?? api ?? task ?? system ?? flow
   if (!entity) return null
 
   const labelOf = (id: string) =>
@@ -164,7 +165,7 @@ export function DetailDrawer({
         </button>
       </div>
 
-      <h2 style={h2}>{page?.label ?? api?.label ?? system?.label ?? 'Task'}</h2>
+      <h2 style={h2}>{page?.label ?? api?.label ?? system?.label ?? flow?.label ?? 'Task'}</h2>
       {task && <div style={{ fontSize: 14, fontWeight: 600 }}>{task.title}</div>}
       <div style={{ marginTop: 6 }}>
         {path && <span style={mono}>{path}</span>}
@@ -227,6 +228,40 @@ export function DetailDrawer({
         <>
           <div style={secTitle}>Kind</div>
           <span style={{ ...mono, ...kindChip }}>{system.kind}</span>
+        </>
+      )}
+
+      {flow && (
+        <>
+          <div style={secTitle}>Steps</div>
+          {flow.steps.map((s, i) => (
+            <Row
+              key={i}
+              onClick={
+                s.uses ? () => onSelect({ kind: kindOf(s.uses!), id: s.uses! }) : undefined
+              }
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 8,
+                  height: 8,
+                  borderRadius: 99,
+                  background: statusColor[s.status],
+                  marginRight: 8,
+                }}
+              />
+              {i + 1}. {s.label}
+              {s.uses && (
+                <span style={{ ...mono, fontSize: 10, color: theme.muted, marginLeft: 8 }}>
+                  → {labelOf(s.uses)}
+                </span>
+              )}
+              {s.note && (
+                <div style={{ fontSize: 11, color: theme.muted, marginTop: 3 }}>{s.note}</div>
+              )}
+            </Row>
+          ))}
         </>
       )}
 
@@ -297,11 +332,11 @@ export function DetailDrawer({
         </>
       )}
 
-      {(page?.note ?? api?.note ?? system?.note) && (
+      {(page?.note ?? api?.note ?? system?.note ?? flow?.note) && (
         <>
           <div style={secTitle}>Note</div>
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: 0 }}>
-            {page?.note ?? api?.note ?? system?.note}
+            {page?.note ?? api?.note ?? system?.note ?? flow?.note}
           </p>
         </>
       )}

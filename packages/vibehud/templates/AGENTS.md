@@ -14,6 +14,11 @@ Update the file **in the same turn** as the change it describes, whenever you:
 3. Add or change a page's major building blocks (a form, a grid, a chart) →
    update that page's `elements`.
 4. Integrate an external service or database → update `systems`.
+4b. Build or change a backend pipeline whose steps are NOT routes (webhook
+   processing, background jobs, emails, multi-step order handling) → declare
+   it in `flows` with ordered `steps`, linking steps to pages/apis/systems
+   via `uses` where they touch one. This is how hidden backend machinery
+   stays visible and reviewable.
 5. Start reading a new environment variable → add its NAME to `env` (never a
    value) and to `.env.example`.
 6. Start, finish, or plan a piece of work → update `tasks` (todo/doing/done).

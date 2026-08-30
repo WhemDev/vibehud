@@ -7,6 +7,7 @@ import type { AgentMap } from '../schema'
 import type { ValidationReport } from '../validate'
 import { DetailDrawer, type Selection } from './DetailDrawer'
 import { EnvSection } from './EnvSection'
+import { FlowsView } from './FlowsView'
 import { HistoryStrip } from './HistoryStrip'
 import { KanbanView } from './KanbanView'
 import { MapView } from './MapView'
@@ -187,6 +188,14 @@ export function VibehudPanel({
             query={query}
             health={health}
           />
+          {map.flows.length > 0 && (
+            <>
+              <div>
+                <div style={sectionTitle}>Backend flows</div>
+              </div>
+              <FlowsView map={map} onSelect={setSelection} query={query} />
+            </>
+          )}
           {envReport && (envReport.vars.length > 0 || envReport.exampleUndeclared.length > 0) && (
             <>
               <div>

@@ -1,6 +1,7 @@
 'use client'
 
 import dagre from '@dagrejs/dagre'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AgentMap } from '../schema'
 import { normalizeRoute, type ValidationReport } from '../validate'
 import type { Selection } from './DetailDrawer'
@@ -121,20 +122,12 @@ export function MapView({
     selection != null && selection.kind !== 'task' && selection.id === id
 
   return (
-    <div
-      style={{
-        overflowX: 'auto',
-        background: theme.bg,
-        border: `${theme.bw}px solid ${theme.line}`,
-        boxShadow: theme.shadow,
-      }}
-    >
-      <svg width={width} height={height} role="img" aria-label="App map">
-        <defs>
-          <marker id="hud-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-            <path d="M0 0 L8 4 L0 8 z" fill={theme.line} />
-          </marker>
-        </defs>
+    <Viewport contentW={width} contentH={height}>
+      <defs>
+        <marker id="hud-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L8 4 L0 8 z" fill={theme.line} />
+        </marker>
+      </defs>
         {edges.map((e, i) => (
           <polyline
             key={i}
@@ -283,7 +276,172 @@ export function MapView({
             </g>
           )
         })}
+    </Viewport>
+  )
+}
+
+/**
+ * Pan/zoom canvas: drag the ground (not the blocks), wheel/pinch to zoom.
+ * Pan is clamped so at least EDGE px of the graph always stays visible —
+ * you can't drag the workflow out of existence. Node clicks survive; a drag
+ * past 4px suppresses the click.
+ */
+const MIN_K = 0.4
+const MAX_K = 2.5
+const EDGE = 120
+
+function Viewport({
+  contentW,
+  contentH,
+  children,
+}: {
+  contentW: number
+  contentH: number
+  children: ReactNode
+}) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const [view, setView] = useState({ x: 0, y: 0, k: 1 })
+  const [boxSize, setBoxSize] = useState({ w: 0, h: 0 })
+  const drag = useRef<{ px: number; py: number; moved: boolean } | null>(null)
+
+  const boxH = Math.max(240, Math.min(contentH, 520))
+
+  const clamp = (x: number, y: number, k: number, w: number, h: number) => ({
+    x: Math.min(w - EDGE, Math.max(EDGE - contentW * k, x)),
+    y: Math.min(h - EDGE, Math.max(EDGE - contentH * k, y)),
+    k,
+  })
+
+  const fit = (w: number, h: number) => {
+    const k = Math.min(1, w / contentW, h / contentH)
+    return { x: (w - contentW * k) / 2, y: (h - contentH * k) / 2, k }
+  }
+
+  useLayoutEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+    const measure = () => {
+      const w = box.clientWidth
+      const h = box.clientHeight
+      setBoxSize({ w, h })
+      setView(fit(w, h))
+    }
+    measure()
+    const ro = new ResizeObserver(() => {
+      const w = box.clientWidth
+      const h = box.clientHeight
+      setBoxSize((prev) => (prev.w === w && prev.h === h ? prev : (setView(fit(w, h)), { w, h })))
+    })
+    ro.observe(box)
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentW, contentH])
+
+  // Native wheel listener: React's synthetic onWheel can't preventDefault (passive).
+  useEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = box.getBoundingClientRect()
+      const cx = e.clientX - rect.left
+      const cy = e.clientY - rect.top
+      setView((v) => {
+        const k = Math.min(MAX_K, Math.max(MIN_K, v.k * Math.exp(-e.deltaY * 0.0015)))
+        const scale = k / v.k
+        return clamp(cx - (cx - v.x) * scale, cy - (cy - v.y) * scale, k, rect.width, rect.height)
+      })
+    }
+    box.addEventListener('wheel', onWheel, { passive: false })
+    return () => box.removeEventListener('wheel', onWheel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentW, contentH])
+
+  const zoomBy = (factor: number) => {
+    setView((v) => {
+      const k = Math.min(MAX_K, Math.max(MIN_K, v.k * factor))
+      const scale = k / v.k
+      const cx = boxSize.w / 2
+      const cy = boxSize.h / 2
+      return clamp(cx - (cx - v.x) * scale, cy - (cy - v.y) * scale, k, boxSize.w, boxSize.h)
+    })
+  }
+
+  const ctrlBtn: CSSProperties = {
+    width: 30,
+    height: 30,
+    background: theme.card,
+    border: `${theme.bw}px solid ${theme.line}`,
+    boxShadow: theme.shadowSmall,
+    fontFamily: theme.fontBody,
+    fontWeight: 800,
+    fontSize: 14,
+    lineHeight: 1,
+    cursor: 'pointer',
+    color: theme.ink,
+  }
+
+  return (
+    <div
+      ref={boxRef}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        height: boxH,
+        background: theme.bg,
+        border: `${theme.bw}px solid ${theme.line}`,
+        boxShadow: theme.shadow,
+        cursor: drag.current ? 'grabbing' : 'grab',
+        touchAction: 'none',
+      }}
+      onPointerDown={(e) => {
+        // a fresh gesture always resets the click-suppression state
+        drag.current = { px: e.clientX, py: e.clientY, moved: false }
+        ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current
+        if (!d) return
+        const dx = e.clientX - d.px
+        const dy = e.clientY - d.py
+        if (!d.moved && Math.hypot(dx, dy) < 4) return
+        d.moved = true
+        d.px = e.clientX
+        d.py = e.clientY
+        setView((v) => clamp(v.x + dx, v.y + dy, v.k, boxSize.w, boxSize.h))
+      }}
+      onClickCapture={(e) => {
+        if (drag.current?.moved) e.stopPropagation()
+        drag.current = null
+      }}
+    >
+      <svg width="100%" height="100%" role="img" aria-label="App map">
+        <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`}>{children}</g>
       </svg>
+      <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 6 }}>
+        <button style={ctrlBtn} aria-label="zoom in" onClick={() => zoomBy(1.25)}>+</button>
+        <button style={ctrlBtn} aria-label="zoom out" onClick={() => zoomBy(0.8)}>−</button>
+        <button
+          style={{ ...ctrlBtn, fontSize: 11 }}
+          aria-label="fit to view"
+          onClick={() => setView(fit(boxSize.w, boxSize.h))}
+        >
+          ⤢
+        </button>
+      </div>
+      <span
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          right: 10,
+          fontFamily: theme.fontMono,
+          fontSize: 9,
+          color: theme.muted,
+          pointerEvents: 'none',
+        }}
+      >
+        drag to pan · scroll to zoom · {Math.round(view.k * 100)}%
+      </span>
     </div>
   )
 }

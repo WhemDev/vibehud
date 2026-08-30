@@ -11,6 +11,8 @@ export {
   type ApiRoute,
   type SystemNode,
   type EnvVar,
+  type Flow,
+  type FlowStep,
   type Relation,
   type Task,
   type Status,

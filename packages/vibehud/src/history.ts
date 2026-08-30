@@ -24,6 +24,7 @@ export function diffMaps(prev: AgentMap | undefined, curr: AgentMap): string[] {
     ['page', prev?.pages ?? [], curr.pages],
     ['API', prev?.apis ?? [], curr.apis],
     ['system', prev?.systems ?? [], curr.systems],
+    ['flow', prev?.flows ?? [], curr.flows ?? []],
   ] as const) {
     const p = byId(prevXs as { id: string; label?: string }[])
     const c = byId(currXs as { id: string; label?: string }[])

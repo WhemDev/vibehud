@@ -63,6 +63,12 @@ function findDangling(map: AgentMap): string[] {
   for (const t of map.tasks) {
     if (t.page && !known.has(t.page)) out.push(`task "${t.title}": unknown page id "${t.page}"`)
   }
+  for (const f of map.flows ?? []) {
+    for (const s of f.steps) {
+      if (s.uses && !known.has(s.uses))
+        out.push(`flow "${f.label}" step "${s.label}": unknown id "${s.uses}"`)
+    }
+  }
   return out
 }
 
